@@ -1,0 +1,58 @@
+div(ng-include='"components/navbar/navbar.html"')
+
+header#banner.hero-unit
+	.container
+		img(src='assets/images/Xmas_logo.png', style='width:100%' alt='I\'m Yeoman')
+
+.container
+	.row
+		div.well.col-md-4
+			.col-md-6
+				p.input-group
+					span.input-group-addon 設定開始日期
+					input.form-control(type="date", uib-datepicker-popup, ng-model="dt", is-open="status.opened", init-date="dt", datepicker-options="dateOptions", ng-required="true", close-text="Close")
+					span.input-group-btn
+						button.btn.btn-default(type='button', ng-click='openDatePicker($event)')
+							i.glyphicon.glyphicon-calendar
+
+			button.btn.btn-primary.btn-block(type='button', ng-click="openInvoiceBuildModal()") 產生發票號碼
+			buttun.btn.btn-primary.btn-block(type='button') 列印統一發票
+	.row(infinite-scroll="orders.nextPage()", infinite-scroll-disabled="orders.busy", infinite-scroll-distance='0')
+		table.table.table-hover.table-bordered
+			tr
+				th 筆數
+				th 訂單編號
+					br
+					input(ng-model="search.order_id")
+				th 發票號碼
+				th 會員號碼
+					br
+					input(ng-model="search.customer_id")
+				th 會員
+					br
+					input(ng-model="search.firstname")
+				th 金額
+				th 訂單狀態
+					br
+					input(ng-model="search.order_status_name")
+				th 成立日期
+			tr(ng-repeat="order in orders.items | filter: search")
+				td {{$index}}
+				td {{order.order_id}}
+				th {{order.invoice_prefix + order.invoice_no}}
+				th {{order.customer_id}}
+				th {{order.firstname + ', ' + order.lastname}}
+				th {{order.total | currency: "$": 0}}
+				th {{order.order_status_name}}
+				th {{order.date_added | date: "yy-MM-dd": "+0800"}}
+		div(ng-show="orders.busy") Loading Orders ......
+footer.footer
+	.container
+		p
+			| Angular Fullstack v2.1.1
+			= ' | '
+			a(href='https://twitter.com/tyhenkel') @tyhenkel
+			= ' | '
+			a(href='https://github.com/DaftMonk/generator-angular-fullstack/issues?state=open') Issues
+
+//- script(type="text/ng-template", src="./invoice_build_confirm_modal.html", id="invoice_build_confirm_modal.html")
