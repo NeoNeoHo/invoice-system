@@ -4,7 +4,16 @@ var _ = require('lodash');
 var Order = require('./order.model');
 var mysql = require('mysql');
 var db_config = require('../../config/db_config.js');
-var mysql_connection = db_config.mysql_connection
+var mysql_config = db_config.mysql_config;
+var mysql_connection = mysql.createConnection({
+	host: mysql_config.host,
+	port: mysql_config.port,
+	user: mysql_config.user,
+	password: mysql_config.password,
+	database: mysql_config.database,
+	multipleStatements: true
+});
+
 
 // Get list of orders
 exports.index = function(req, res) {
@@ -17,6 +26,8 @@ exports.index = function(req, res) {
 		return res.status(200).json(rows);
 	});
 };
+
+
 
 
 function handleError(res, err) {
