@@ -1,7 +1,7 @@
 'use strict';
 
 var _ = require('lodash');
-var q = require('Q');
+var q = require('q');
 var Invoice = require('./invoice.model');
 var mysql = require('mysql');
 var db_config = require('../../config/db_config.js');
