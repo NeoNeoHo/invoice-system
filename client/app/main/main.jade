@@ -4,7 +4,7 @@ header#banner.hero-unit
 	.container
 		img(src='assets/images/Xmas_logo.png', style='width:100%' alt='I\'m Yeoman')
 
-.container
+.container-fluid
 	.row
 		div.well.col-md-4
 			.col-md-6
@@ -24,7 +24,10 @@ header#banner.hero-unit
 				th 訂單編號
 					br
 					input(ng-model="search.order_id")
+				th 發票前綴
 				th 發票號碼
+					br
+					input(ng-model="search.invoice_no")
 				th 會員號碼
 					br
 					input(ng-model="search.customer_id")
@@ -39,12 +42,13 @@ header#banner.hero-unit
 			tr(ng-repeat="order in orders.items | filter: search")
 				td {{$index}}
 				td {{order.order_id}}
-				th {{order.invoice_prefix + order.invoice_no}}
-				th {{order.customer_id}}
-				th {{order.firstname + ', ' + order.lastname}}
-				th {{order.total | currency: "$": 0}}
-				th {{order.order_status_name}}
-				th {{order.date_added | date: "yy-MM-dd": "+0800"}}
+				td {{order.invoice_prefix}}
+				td {{order.invoice_no}}
+				td {{order.customer_id}}
+				td {{order.firstname + ', ' + order.lastname}}
+				td {{order.total | currency: "$": 0}}
+				td {{order.order_status_name}}
+				td {{order.date_added | date: "yy-MM-dd": "+0800"}}
 		div(ng-show="orders.busy") Loading Orders ......
 footer.footer
 	.container
