@@ -5,15 +5,8 @@ var q = require('q');
 var Invoice = require('./invoice.model');
 var mysql = require('mysql');
 var db_config = require('../../config/db_config.js');
-var mysql_config = db_config.mysql_config;
-var mysql_connection = mysql.createConnection({
-	host: mysql_config.host,
-	port: mysql_config.port,
-	user: mysql_config.user,
-	password: mysql_config.password,
-	database: mysql_config.database,
-	multipleStatements: true
-});
+var mysql_connection = db_config.mysql_connection;
+var mysql_pool = db_config.mysql_pool;
 
 // Get list of invoices
 exports.index = function(req, res) {
@@ -150,10 +143,13 @@ exports.destroy = function(req, res) {
 function getOrderById(order_id) {
 	var defer = q.defer();
 	var sql = 'select * from oc_order where order_id in ' + mysql_connection.escape([order_id]);
-	mysql_connection.query(sql, function(err, rows) {
-		if (err) { defer.reject(err); }
-		if(!rows) { defer.reject('Not Found') }
-		defer.resolve(rows);
+	mysql_pool.getConnection(function(err, connection){
+		connection.query(sql, function(err, rows) {
+			if (err) { defer.reject(err); }
+			if(!rows) { defer.reject('Not Found') }
+			connection.release();
+			defer.resolve(rows);
+		});
 	});
 	return defer.promise;
 }
@@ -161,10 +157,13 @@ function getOrderById(order_id) {
 function getOrderTotalById(order_id) {
 	var defer = q.defer();
 	var sql = 'select * from oc_order_total where order_id in ' + mysql_connection.escape([order_id]);
-	mysql_connection.query(sql, function(err, rows) {
-		if (err) { defer.reject(err); }
-		if(!rows) { defer.reject('Not Found') }
-		defer.resolve(rows);
+	mysql_pool.getConnection(function(err, connection){
+		connection.query(sql, function(err, rows) {
+			if (err) { defer.reject(err); }
+			if(!rows) { defer.reject('Not Found') }
+			connection.release();
+			defer.resolve(rows);
+		});
 	});
 	return defer.promise;
 }
@@ -173,22 +172,28 @@ function getLastInvoiceNo(year, month) {
 	var defer = q.defer();
 	var start_date = year + '-' + month + '-' + '01';
 	var end_date = year + '-' + month + '-' + '31';
-	mysql_connection.query('select invoice_no, date_added, order_id from oc_order where date_added >= ? and date_added <= ? order by invoice_no desc, date_added asc limit 1;', [start_date, end_date], function(err, row){
-		if (err) {
-			defer.reject(err);
-		}
-		defer.resolve(row);
+	mysql_pool.getConnection(function(err, connection){
+		connection.query('select invoice_no, date_added, order_id from oc_order where date_added >= ? and date_added <= ? order by invoice_no desc, date_added asc limit 1;', [start_date, end_date], function(err, row){
+			if (err) {
+				defer.reject(err);
+			}
+			connection.release();
+			defer.resolve(row);
+		});
 	});
 	return defer.promise;
 }
 
 function getInvoiceSetting() {
 	var defer = q.defer();
-	mysql_connection.query('select * from oc_invoice_setting', function(err, rows){
-		if (err) {
-			defer.reject(err);
-		}
-		defer.resolve(rows);
+	mysql_pool.getConnection(function(err, connection){
+		connection.query('select * from oc_invoice_setting', function(err, rows){
+			if (err) {
+				defer.reject(err);
+			}
+			connection.release();
+			defer.resolve(rows);
+		});
 	});
 	return defer.promise;
 }
@@ -196,11 +201,14 @@ function getInvoiceSetting() {
 function getNoInvoiceOrders(date) {
 	var defer = q.defer();
 	var sql_string = 'select order_id, invoice_prefix, invoice_no, date_added from oc_order where invoice_no = 0 and order_status_id in (17, 31, 35, 36, 37, 38, 39, 41, 43) and date_added >= '+mysql_connection.escape(date)+' order by date_added asc;';
-	mysql_connection.query(sql_string, function(err, rows){
-		if (err) {
-			defer.reject(err);
-		}
-		defer.resolve(rows);
+	mysql_pool.getConnection(function(err, connection){
+		connection.query(sql_string, function(err, rows){
+			if (err) {
+				defer.reject(err);
+			}
+			connection.release();
+			defer.resolve(rows);
+		});
 	});
 	return defer.promise;
 }
@@ -231,14 +239,17 @@ function setInvoices(last_invoice_day, start_invoice_no, invoice_prefix, lorders
 		}
 	});
 	if(sql_string.length > 0) {
-		mysql_connection.query(sql_string, function(err, rows) {
-			if (err) {
-				console.log(err);
-				defer.reject(err);
-			}
-			result['fails'] = error_order;
-			result['success'] = ret;
-			defer.resolve(result);
+		mysql_pool.getConnection(function(err, connection){
+			connection.query(sql_string, function(err, rows) {
+				if (err) {
+					console.log(err);
+					defer.reject(err);
+				}
+				result['fails'] = error_order;
+				result['success'] = ret;
+				connection.release();
+				defer.resolve(result);
+			});
 		});
 	}
 	else {

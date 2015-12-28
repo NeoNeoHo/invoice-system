@@ -19,8 +19,10 @@ function isAuthenticated() {
     .use(function(req, res, next) {
       // allow access_token to be passed through query parameter as well
       if(req.query && req.query.hasOwnProperty('access_token')) {
+        console.log('1111111111111 => isAuthenticated');
         req.headers.authorization = 'Bearer ' + req.query.access_token;
       }
+      console.log('2222222222222 => isAuthenticated');
       validateJwt(req, res, next);
     })
     // Attach user to request
