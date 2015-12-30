@@ -4,6 +4,10 @@ angular.module 'goRocketApp'
 .controller 'MainCtrl', ($scope, $http, Order, $uibModal, $log) ->
 	$scope.orders = new Order()
 	$scope.dt = new Date()
+	$scope.testXml = () ->
+		$http.get '/api/invoices/'
+		.then (data) ->
+			console.log data.data
 	$scope.status = 
 		opened: false
 	$scope.openDatePicker = ($event) ->

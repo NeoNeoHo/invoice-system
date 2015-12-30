@@ -7,13 +7,21 @@ var mysql = require('mysql');
 var db_config = require('../../config/db_config.js');
 var mysql_connection = db_config.mysql_connection;
 var mysql_pool = db_config.mysql_pool;
+var js2xmlparser = require('js2xmlparser');
 
 // Get list of invoices
 exports.index = function(req, res) {
-	Invoice.find(function (err, invoices) {
-		if(err) { return handleError(res, err); }
-		return res.status(200).json(invoices);
-	});
+	console.log('fdjaofqqq');
+	var data = {
+    	"firstName": "John",
+    	"lastName": "Smith"
+	};
+	console.log(js2xmlparser("person", data));
+	return res.status(200).send(js2xmlparser("person", data));
+	// Invoice.find(function (err, invoices) {
+	// 	if(err) { return handleError(res, err); }
+	// 	return res.status(200).json(invoices);
+	// });
 };
 
 // Get a single invoice
@@ -97,7 +105,6 @@ exports.createInvoiceNo = function(req, res) {
 	});
 };
 
-
 exports.printInvoiceAll = function(req, res) {
 	var promises = [];
 	var order_ids = _.pluck(req.body.orders, 'order_id');
@@ -139,6 +146,81 @@ exports.destroy = function(req, res) {
 		});
 	});
 };
+
+
+exports.AutoCreateInvoiceNo = function(date) {
+	// console.log(date);
+	// var date = getFormatDate(date);
+	getNoInvoiceOrders(date)
+	.then(function(orders){
+		console.log(orders);
+		if(orders.length == 0) {
+			return false;
+		}
+		var grped_orders = _.groupBy(orders, function(order) {
+			return order.date_added.getMonth() + 1;  // getMonth() -> Jan = 0, Feb = 1
+		});
+		var sorted_months = _.sortBy(_.keys(grped_orders), function(item) {
+			return parseInt(item);
+		});
+
+		_.forEach(sorted_months, function(lmonth) {
+			var lorders = grped_orders[lmonth];
+			var lyear = lorders[0].date_added.getYear() + 1900;   // getYear() -> start from 1900
+			var lday = lorders[0].date_added.getDate();
+			var lorder_id = lorders[0].order_id;
+
+			var p1 = getInvoiceSetting();
+			var p2 = getLastInvoiceNo(lyear, lmonth);
+
+			var promises = [];
+			promises.push(p1);
+			promises.push(p2);
+			q.all(promises)
+			.then(function(datas) {
+				var invoice_settings = datas[0];
+				var last_invoice_no = datas[1][0].invoice_no;
+				var last_invoice_day = datas[1][0].date_added.getDate();
+				var last_order_id =  datas[1][0].order_id;
+				var invoice_setting = _.find(invoice_settings, function(lset) {
+					return (lset.year == lyear) && (lset.month == lmonth);
+				});
+				var invoice_prefix = invoice_setting.invoice_prefix;
+				if(last_invoice_no == 0) {   // 如果是本月第一筆單
+					if(invoice_setting.start_no == 0) {   // 如果是雙數月的第二個月，發票號碼則為第一個月的延續
+						getLastInvoiceNo(lyear, lmonth-1)
+						.then(function(data) {
+							var start_invoice_no = (Math.floor(data[0].invoice_no / 50) + 1) * 50;
+							setInvoices(last_invoice_day, start_invoice_no, invoice_prefix, lorders)
+							.then(function(result) {
+								return result;
+							});
+						});
+					}
+					else {  //  如果是開始月，則號碼從5500開始
+						var start_invoice_no = invoice_setting.start_no;	
+						setInvoices(last_invoice_day, start_invoice_no, invoice_prefix, lorders)
+						.then(function(result) {
+							return result;
+						});					}
+				}
+				if(last_invoice_no > 0) {    //  如果不是本月的第一筆單，則發票號碼延續下去
+					var start_invoice_no = last_invoice_no + 1;
+					setInvoices(last_invoice_day, start_invoice_no, invoice_prefix, lorders)
+					.then(function(result) {
+						return result;
+					});
+				}
+				
+			}, function(err) {
+				return err;
+			});
+		});
+	}, function(err){
+		return err;
+	});
+};
+
 
 function getOrderById(order_id) {
 	var defer = q.defer();

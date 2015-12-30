@@ -16,7 +16,8 @@ header#banner.hero-unit
 							i.glyphicon.glyphicon-calendar
 
 			button.btn.btn-primary.btn-block(type='button', ng-click="openInvoiceBuildModal()") 產生發票號碼
-			buttun.btn.btn-primary.btn-block(type='button') 列印統一發票
+			button.btn.btn-primary.btn-block(type='button') 列印統一發票
+			button.btn.btn-primary.btn-block(type='button', ng-click="testXml()") 測試XML
 	.row(infinite-scroll="orders.nextPage()", infinite-scroll-disabled="orders.busy", infinite-scroll-distance='0')
 		table.table.table-hover.table-bordered
 			tr
