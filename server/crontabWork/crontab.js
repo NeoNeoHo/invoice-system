@@ -16,7 +16,7 @@ var j = schedule.scheduleJob({hour: 9, minute: 0}, function(){
   	winston.info({message: 'Update Invoice!  ' + date});
 });
 
-var autoAddRewardCrontab = schedule.scheduleJob({hour: 21, minute: 0}, function(){
+var autoAddRewardCrontab = schedule.scheduleJob({hour: 23, minute: 0}, function(){
 	var now = moment();
 	var today = moment().format('YYYY-MM-DD');
 	var yesterday = now.subtract(1, 'days').format('YYYY-MM-DD');
@@ -30,5 +30,8 @@ var autoAddRewardCrontab = schedule.scheduleJob({hour: 21, minute: 0}, function(
 	rewards.addRewardsWithStatusAndDate(32, _7_DaysBefore).then(function(result) {winston.info({message: result})}); // check 7 days before, for 貨到付款 shipped
 
 	rewards.addRewardsWithStatusAndDate(28, _15_DaysBefore).then(function(result) {winston.info({message: result})}); // check 15 days before, for 超商付款 shipped
+
+	rewards.removeRewardsWithStatusAndDate(46, today).then(function(result) {winston.info({message: result})});  // check everyday, for 宅配未取，取消他的紅利點數
+	rewards.removeRewardsWithStatusAndDate(45, today).then(function(result) {winston.info({message: result})});  // check everyday, for 宅配未取，取消他的紅利點數
 });
 

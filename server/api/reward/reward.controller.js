@@ -7,7 +7,8 @@ var q = require('q');
 var db_config = require('../../config/db_config.js');
 var mysql_connection = db_config.mysql_connection;
 var mysql_pool = db_config.mysql_pool;
-
+var winston = require('winston');
+winston.add(winston.transports.File, {filename: 'Benson.log'}); 
 
 // Get list of orders
 exports.index = function(req, res) {
@@ -32,6 +33,26 @@ exports.addRewardsWithStatusAndDate = function(order_status, date) {
 		var promises = [];
 		_.forEach(datas, function(ldata){
 			promises.push(addRewardIfNotAdd(ldata));
+		});
+		q.all(promises)
+		.then(function(datas){
+			_.forEach(datas, function(data) {
+				results.push(data);
+			});
+			defer.resolve(results);
+		});	
+	});
+	return defer.promise;
+}
+
+exports.removeRewardsWithStatusAndDate = function(order_status, date) {
+	var defer = q.defer();
+	getOrdersWithStatusAndDate(order_status, date)
+	.then(function(datas) {
+		var results = [];
+		var promises = [];
+		_.forEach(datas, function(ldata){
+			promises.push(removeRewardIfAdd(ldata));
 		});
 		q.all(promises)
 		.then(function(datas){
@@ -79,19 +100,57 @@ function addRewardIfNotAdd(order_info) {
 				if (reward_point[0].points <= 0) {
 					defer.resolve(order_id + ' no need to add ' + reward_point[0].points + ' points!');
 				}
+				else {
+					var insert_dict = {};
+					insert_dict['customer_id'] = customer_id;
+					insert_dict['order_id'] = order_id;
+					insert_dict['description'] = '訂單號： #' + order_id + ' 紅利點數';
+					insert_dict['points'] = reward_point[0].points;
+					insert_dict['date_added'] = new Date();
+					insertReward(insert_dict)
+					.then(function(result) {
+						defer.resolve(order_id + ' add ' + reward_point[0].points + ' points!');
+					});
+				}
+			});
+		}
+	});
+	return defer.promise;
+}
 
+function removeRewardIfAdd(order_info) {
+	var defer = q.defer();
+	var order_id = order_info.order_id;
+	var customer_id = order_info.customer_id;
+	getRewardByOrderId(order_id)
+	.then(function(allRewards) {
+		var promises = [];
+		var positive_reward = _.filter(allRewards, function(reward) { 
+			return reward.points > 0;
+		});
+		if (_.size(positive_reward) == 0) { // 如果沒有加過紅利點數，則返回
+			defer.resolve(order_id + ' already delete reward!');
+		}
+		else if (_.size(positive_reward) > 0) {   // 如果已經加過紅利點數，則扣除紅利
+			_.forEach(positive_reward, function(lreward) {
 				var insert_dict = {};
 				insert_dict['customer_id'] = customer_id;
 				insert_dict['order_id'] = order_id;
-				insert_dict['description'] = '訂單號： #' + order_id + ' 紅利點數';
-				insert_dict['points'] = reward_point[0].points;
+				insert_dict['description'] = '訂單號： #' + order_id + ' 商品未取，取消紅利點數 ' + lreward.points + '點';
+				insert_dict['points'] = 0;
 				insert_dict['date_added'] = new Date();
-				insertReward(insert_dict)
-				.then(function(result) {
-					defer.resolve(order_id + ' add ' + reward_point[0].points + ' points!');
-				});
+				promises.push(insertReward(insert_dict));
+				promises.push(deleteReward(lreward.customer_reward_id));
+			});
+			q.all(promises)
+			.then(function(results) {
+				defer.resolve(order_id + ' remove reward points due to failed order !');
 			});
 		}
+		else {
+			defer.resolve('No need to delete any reward');
+		}
+
 	});
 	return defer.promise;
 }
@@ -130,6 +189,20 @@ function insertReward(insert_dict) {
 	var defer = q.defer();
 	mysql_pool.getConnection(function(err, connection){
 		connection.query('insert into oc_customer_reward set ?', insert_dict, function(err, result){
+			if (err) {
+				defer.reject(err);
+			}
+			connection.release();
+			defer.resolve(result);
+		});
+	});
+	return defer.promise;
+}
+
+function deleteReward(reward_id) {
+	var defer = q.defer();
+	mysql_pool.getConnection(function(err, connection){
+		connection.query('delete from oc_customer_reward where customer_reward_id = ?', reward_id, function(err, result){
 			if (err) {
 				defer.reject(err);
 			}
