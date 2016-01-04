@@ -7,8 +7,7 @@ var q = require('q');
 var db_config = require('../../config/db_config.js');
 var mysql_connection = db_config.mysql_connection;
 var mysql_pool = db_config.mysql_pool;
-var winston = require('winston');
-winston.add(winston.transports.File, {filename: 'Benson.log'}); 
+
 
 // Get list of orders
 exports.index = function(req, res) {
