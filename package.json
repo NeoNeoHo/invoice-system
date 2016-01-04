@@ -16,13 +16,15 @@
     "jsonwebtoken": "^5.0.0",
     "lodash": "~2.4.1",
     "method-override": "~1.0.0",
+    "moment": "^2.11.0",
     "mongoose": "~4.0.3",
     "morgan": "~1.0.0",
     "mysql": "github:felixge/node-mysql",
     "passport": "~0.2.0",
     "passport-local": "~0.1.6",
     "q": "^1.4.1",
-    "serve-favicon": "~2.0.1"
+    "serve-favicon": "~2.0.1",
+    "winston": "^2.1.1"
   },
   "devDependencies": {
     "connect-livereload": "~0.4.0",
