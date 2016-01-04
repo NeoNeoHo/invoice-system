@@ -28,12 +28,18 @@ exports.addRewardsWithStatusAndDate = function(order_status, date) {
 	var defer = q.defer();
 	getOrdersWithStatusAndDate(order_status, date)
 	.then(function(datas) {
+		var results = [];
+		var promises = [];
 		_.forEach(datas, function(ldata){
-			addRewardIfNotAdd(ldata)
-			.then(function(result) {
-				defer.resolve(result);
-			});
+			promises.push(addRewardIfNotAdd(ldata));
 		});
+		q.all(promises)
+		.then(function(datas){
+			_.forEach(datas, function(data) {
+				results.push(data);
+			});
+			defer.resolve(results);
+		});	
 	});
 	return defer.promise;
 }
@@ -59,18 +65,21 @@ function addRewardIfNotAdd(order_info) {
 	var customer_id = order_info.customer_id;
 	getRewardByOrderId(order_id)
 	.then(function(allRewards) {
-		console.log(allRewards);
+		// console.log(allRewards);
 		var positive_reward = _.filter(allRewards, function(reward) { 
 			return reward.points > 0;
 		});
-		console.log(positive_reward);
+		// console.log(positive_reward);
 		if (_.size(positive_reward) > 0) {   // 如果已經加過紅利點數，則返回
 			defer.resolve(order_id + ' already added!');
 		}
 		else {
 			getOrderReward(order_id)
 			.then(function(reward_point) {
-				console.log(reward_point);
+				if (reward_point[0].points <= 0) {
+					defer.resolve(order_id + ' no need to add ' + reward_point[0].points + ' points!');
+				}
+
 				var insert_dict = {};
 				insert_dict['customer_id'] = customer_id;
 				insert_dict['order_id'] = order_id;
