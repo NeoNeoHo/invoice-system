@@ -4,15 +4,21 @@ angular.module 'goRocketApp'
 .controller 'MainCtrl', ($scope, $http, Order, $uibModal, $log) ->
 	$scope.orders = new Order()
 	$scope.dt = new Date()
-	$scope.testXml = () ->
-		$http.get '/api/invoices/'
+	$scope.test = () ->
+		$http.get '/api/rewards/reset/2015/20000'
 		.then (data) ->
-			console.log data.data
+			console.log data
 	$scope.status = 
 		opened: false
 	$scope.openDatePicker = ($event) ->
 		$scope.status.opened = true
-
+	$scope.add_mailChimp_sub = () ->
+		$http.post '/api/things/mailchimp', {
+			'list_id': '31093812',
+			'email': 'b9999@gmail.com'
+			}
+		.then (data) ->
+			console.log data
 	$scope.openInvoiceBuildModal = () ->
 		modalInstance = $uibModal.open(
 			animation: true
