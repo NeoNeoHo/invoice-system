@@ -62,6 +62,7 @@ var customer_update_rule = new schedule.RecurrenceRule();
 			mailChimp.addMCListSubscribers(api_config.mailChimp_lists_ids['customer_list'], ldata)
 			.then(function(data) {
 				console.log(moment().format('YYYY-MM-DD hh:mm') + ' customer list sync to mailchimp');
+				// console.log(data);
 			});
 		}
 	);
