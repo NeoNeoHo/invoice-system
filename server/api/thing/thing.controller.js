@@ -15,14 +15,15 @@ var Disqus = require('disqus-node');
 var request = require('request');
 var q = require('q');
 var md5 = require('md5');
+var api_config = require('../../config/api_config.js');
 
 var mailchimp_url = 'https://us10.api.mailchimp.com';
 var disqus = new Disqus({
-	api_key: 'iz5mSDgcUupUDo0Nub4hjHXnelKYJcl9YKZHfUn0HSf7UI9B4ztLWGD5innZsbej',
+	api_key: '',
 	// required
-	api_secret: '4VCawwEQbeafiy4aqWES1Y98dBypFwy8MQFJXAoBschWwufb86JciuSq53FS3vko',
+	api_secret: '',
 	// required when authentication is required
-	access_token: '41a3a417be644566bc1e747c752b1aad',
+	access_token: '',
 	// defaults shown
 	logLevel: 'info',
 	https: true
@@ -42,10 +43,10 @@ exports.index = function(req, res) {
 exports.getMCListSubscriber = function(req, res) {
 	var list_id = req.params.list_id;
 	var mail_md5 = md5('b95042@gmail.com');
-	request.get(mailchimp_url+'/3.0/lists/5c2e2f71e3/members/'+mail_md5, {
+	request.get(mailchimp_url+'/3.0/lists/' + list_id + '/members/'+mail_md5, {
 		'auth': {
-			'user': 'b95042',
-			'pass': '5bded7441c505164adad9c61cb66f113-us10'
+			'user': api_config.mailChimp_user_pw.user,
+			'pass': api_config.mailChimp_user_pw.pw
 		}
 	}, function(err, response, body) {
 		if(err) { return handleError(res, err); }
@@ -94,7 +95,7 @@ exports.addMCListSubscribers = function(list_id, subscribers) {
 	}, function(err, response, body) {
 		if(err) { defer.reject(err); }
 		defer.resolve(response);
-	}).auth('b95042', '5bded7441c505164adad9c61cb66f113-us10', true);
+	}).auth(api_config.mailChimp_user_pw.user, api_config.mailChimp_user_pw.pw, true);
 	return defer.promise;
 };
 

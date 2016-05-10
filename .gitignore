@@ -5,4 +5,6 @@ node_modules
 dist
 /server/config/local.env.js
 /server/config/db_config.js
+/server/config/api_config.js
+/server/config/2016_google_developer_cred.json
 /client/bower_components

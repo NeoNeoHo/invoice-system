@@ -15,6 +15,7 @@ module.exports = function(app) {
   app.use('/api/rewards', require('./api/reward'));
   app.use('/api/things', require('./api/thing'));
   app.use('/api/users', require('./api/user'));
+  app.use('/api/customers', require('./api/customer'));
 
   app.use('/auth', require('./auth'));
   
