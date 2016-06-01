@@ -252,10 +252,13 @@ function getOrderTotalById(order_id) {
 
 function getLastInvoiceNo(year, month) {
 	var defer = q.defer();
+	month = month >= 10 ? month : '0'+month;
 	var start_date = year + '-' + month + '-' + '01';
 	var end_date = year + '-' + month + '-' + '31';
+	console.log(start_date);
+	console.log(end_date);
 	mysql_pool.getConnection(function(err, connection){
-		connection.query('select invoice_no, date_added, order_id from oc_order where date_added >= ? and date_added <= ? order by invoice_no desc, date_added asc limit 1;', [start_date, end_date], function(err, row){
+		connection.query('select invoice_no, date_added, order_id from oc_order where date_format(date_added,"%Y-%m-%d") >= ? and date_format(date_added, "%Y-%m-%d") <= ? order by invoice_no desc, date_added asc limit 1;', [start_date, end_date], function(err, row){
 			if (err) {
 				defer.reject(err);
 			}
