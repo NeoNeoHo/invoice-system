@@ -148,7 +148,7 @@ function getUsedRewards(customer_id) {
 function getOrdersWithStatusAndDate(order_status, date) {
 	var defer = q.defer();
 	var day = moment(date);
-	var expire_date = day.subtract(7, 'days').format('YYYY-MM-DD');
+	var expire_date = day.subtract(10, 'days').format('YYYY-MM-DD');
 	var sql_string = 'select order_id, customer_id from oc_order where order_status_id =' +mysql_connection.escape(order_status) +' and date_format(date_modified, "%Y-%m-%d") <= ' + mysql_connection.escape(date) + ' and date_format(date_modified, "%Y-%m-%d") >= ' + mysql_connection.escape(expire_date) + ' order by order_id asc;';
 	mysql_pool.getConnection(function(err, connection){
 		connection.query(sql_string, function(err, rows){

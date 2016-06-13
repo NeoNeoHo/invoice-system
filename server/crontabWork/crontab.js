@@ -28,8 +28,8 @@ var autoAddRewardCrontab = schedule.scheduleJob({hour: 23, minute: 0}, function(
 	var now = moment();
 	var today = moment().format('YYYY-MM-DD');
 	var yesterday = now.subtract(1, 'days').format('YYYY-MM-DD');
-	var _7_DaysBefore = now.subtract(7, 'days').format('YYYY-MM-DD');
-	var _15_DaysBefore = now.subtract(15, 'days').format('YYYY-MM-DD');
+	var _7_DaysBefore = now.subtract(6, 'days').format('YYYY-MM-DD');
+	var _15_DaysBefore = now.subtract(7, 'days').format('YYYY-MM-DD');
 
 
 	rewards.addRewardsWithStatusAndDate(40, yesterday).then(function(result) {winston.info({message: result})}); // check yesterday, for ATM shipped
