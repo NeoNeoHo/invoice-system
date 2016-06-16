@@ -3,6 +3,7 @@ node_modules
 .sass-cache
 .idea
 dist
+Benson.log
 /server/config/local.env.js
 /server/config/db_config.js
 /server/config/api_config.js
