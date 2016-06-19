@@ -29,49 +29,46 @@ var initial_date = '2016-06-14';
 invoice.AutoCreateInvoiceNo(initial_date);
 
 // ###################  Rewards Adding System ######################
-// var autoAddRewardCrontab = schedule.scheduleJob({hour: 23, minute: 0}, function(){
-// 	var now = moment();
-// 	var today = moment().format('YYYY-MM-DD');
-// 	var yesterday = now.subtract(1, 'days').format('YYYY-MM-DD');
-// 	var _7_DaysBefore = now.subtract(6, 'days').format('YYYY-MM-DD');
-// 	var _15_DaysBefore = now.subtract(7, 'days').format('YYYY-MM-DD');
+var autoAddRewardCrontab = schedule.scheduleJob({hour: 23, minute: 0}, function(){
+	var now = moment();
+	var today = moment().format('YYYY-MM-DD');
+	var yesterday = now.subtract(1, 'days').format('YYYY-MM-DD');
+	var _7_DaysBefore = now.subtract(6, 'days').format('YYYY-MM-DD');
+	var _15_DaysBefore = now.subtract(7, 'days').format('YYYY-MM-DD');
 
 
-// 	rewards.addRewardsWithStatusAndDate(40, yesterday).then(function(result) {winston.info({message: result})}); // check yesterday, for ATM shipped
-// 	rewards.addRewardsWithStatusAndDate(20, yesterday).then(function(result) {winston.info({message: result})}); // check yesterday, for Credit Card shipped
-	
-// 	rewards.addRewardsWithStatusAndDate(32, _7_DaysBefore).then(function(result) {winston.info({message: result})}); // check 7 days before, for 貨到付款 shipped
+	rewards.addRewardsWithStatusAndDate(21, today).then(function(result) {winston.info({message: result})});
+	rewards.addRewardsWithStatusAndDate(29, today).then(function(result) {winston.info({message: result})});	
+	rewards.addRewardsWithStatusAndDate(34, today).then(function(result) {winston.info({message: result})});
 
-// 	rewards.addRewardsWithStatusAndDate(28, _15_DaysBefore).then(function(result) {winston.info({message: result})}); // check 15 days before, for 超商付款 shipped
-
-// 	rewards.removeRewardsWithStatusAndDate(46, today).then(function(result) {winston.info({message: result})});  // check everyday, for 宅配未取，取消他的紅利點數
-// 	rewards.removeRewardsWithStatusAndDate(45, today).then(function(result) {winston.info({message: result})});  // check everyday, for 宅配未取，取消他的紅利點數
-// });
+	rewards.removeRewardsWithStatusAndDate(46, today).then(function(result) {winston.info({message: result})});  // check everyday, for 宅配未取，取消他的紅利點數
+	rewards.removeRewardsWithStatusAndDate(45, today).then(function(result) {winston.info({message: result})});  // check everyday, for 宅配未取，取消他的紅利點數
+});
 
 
 
 // ###################  DB Customer to MailChimp Integration ######################
-// var customer_update_rule = new schedule.RecurrenceRule();
-// 	customer_update_rule.minute = new schedule.Range(0, 59, 1);
-// 	var syncCustomer2MailChimp = schedule.scheduleJob(customer_update_rule, function() {
-// 	var now = moment();
-// 	var today = moment().format('YYYY-MM-DD');
-// 	customer.getCustomerByDate(today)
-// 	.then(
-// 		function(rows) {
-// 			var ldata = [];
-// 			ldata = _.reduce(rows, function(ldata, row) {
-// 				ldata.push({name: row.firstname, email: row.email, telephone: row.telephone});
-// 				return ldata;
-// 			}, ldata);
-// 			mailChimp.addMCListSubscribers(api_config.mailChimp_lists_ids['customer_list'], ldata)
-// 			.then(function(data) {
-// 				console.log(moment().format('YYYY-MM-DD hh:mm') + ' customer list sync to mailchimp');
-// 				// console.log(data);
-// 			});
-// 		}
-// 	);
-// });
+var customer_update_rule = new schedule.RecurrenceRule();
+	customer_update_rule.minute = new schedule.Range(0, 59, 1);
+	var syncCustomer2MailChimp = schedule.scheduleJob(customer_update_rule, function() {
+	var now = moment();
+	var today = moment().format('YYYY-MM-DD');
+	customer.getCustomerByDate(today)
+	.then(
+		function(rows) {
+			var ldata = [];
+			ldata = _.reduce(rows, function(ldata, row) {
+				ldata.push({name: row.firstname, email: row.email, telephone: row.telephone});
+				return ldata;
+			}, ldata);
+			mailChimp.addMCListSubscribers(api_config.mailChimp_lists_ids['customer_list'], ldata)
+			.then(function(data) {
+				console.log(moment().format('YYYY-MM-DD hh:mm') + ' customer list sync to mailchimp');
+				// console.log(data);
+			});
+		}
+	);
+});
 
 
 
