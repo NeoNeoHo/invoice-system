@@ -1,0 +1,23 @@
+div(ng-include='"components/navbar/navbar.html"')
+.container
+	p
+		| The delete user and user index api routes are restricted to users with the 'admin' role.
+	ul.list-group
+		li.list-group-item(ng-repeat='user in users')
+			strong {{user.name}}
+			br
+			span.text-muted {{user.email}}
+			a.trash(ng-click='deletedd(user)')
+				span.glyphicon.glyphicon-trash.pull-right
+	form(name="ezship_form")
+		h2.page-header Ezship Form
+		.form-group
+			label(for='exampleInputFile') File input
+			input#ezhip_file(type='file', name="ezship_file", ngf-select, ng-model="ezship_file")
+			p.help-block Example block-level help text here.
+		.checkbox
+			label
+				input(type='checkbox')
+				|  Check me out
+		button.btn.btn-default(type='submit', ng-click="submit_ezship_form()") Submit
+		button.btn.btn-danger(type='button', ng-click="analyse_ezshp_accounting()", ng-disabled="!with_btn_anaylse_enabled") Analyse

@@ -8,8 +8,8 @@ angular.module 'goRocketApp', [
   'ui.bootstrap',
   'ui.grid',
   'ui.grid.resizeColumns',
-  'infinite-scroll'
-  # 'infinite-scroll'
+  'infinite-scroll',
+  'ngFileUpload'
 ]
 .config ($stateProvider, $urlRouterProvider, $locationProvider, $httpProvider) ->
   $urlRouterProvider
