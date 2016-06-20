@@ -20,7 +20,7 @@ var j = schedule.scheduleJob({hour: 8, minute: 0}, function(){
 	var date = new Date();
 	var initial_date = '2016-06-14';
 	invoice.AutoCreateInvoiceNo(initial_date);
-  	winston.info({message: 'Update Invoice!  ' + date});
+	winston.info({message: 'Update Invoice!  ' + date});
 });
 
 var initial_date = '2016-06-14';
@@ -44,6 +44,79 @@ var autoAddRewardCrontab = schedule.scheduleJob({hour: 23, minute: 0}, function(
 });
 
 
+
+// ###################  SendGrid Integration ######################
+var sg = require('sendgrid').SendGrid(api_config.SENDGRID_API_KEY);
+var request = sg.emptyRequest();
+
+request.method = 'POST';
+request.path = '/v3/mail/send';
+request.body = {
+	"content": [
+	{
+		"type": "text/html",
+		"value": " "
+	}
+	],
+	"from": {
+		"email": "benson@vecsgardenia.com",
+		"name": "Benson Ho"
+	},
+	"personalizations": [
+	{
+		"subject": "Hello, World!",
+		"substitutions": {
+			"-name-": "Benson",
+
+			"-order_id-": "10293",
+
+			"-invoice_no-": "FD12345678"
+		},
+		"to": [
+		{
+			"email": "b95042@gmail.com"
+		},
+		]
+	}
+	],
+	"reply_to": {
+		"email": "benson@vecsgardenia.com",
+		"name": "Benson Ho"
+	},
+	"subject": "Hello, World!",
+	"template_id": "71abec21-e89e-4bf1-aca0-79fa509fae4c",
+	"tracking_settings": {
+		"click_tracking": {
+			"enable": true,
+			"enable_text": true
+		},
+		"ganalytics": {
+			"enable": true,
+			"utm_campaign": "sendgrid",
+			"utm_content": "sendgrid",
+			"utm_medium": "email",
+			"utm_name": "invoice",
+			"utm_term": ""
+		},
+		"open_tracking": {
+			"enable": true,
+			"substitution_tag": "%opentrack"
+		},
+		"subscription_tracking": {
+			"enable": true,
+			"html": "If you would like to unsubscribe and stop receiving these emails <% clickhere %>.",
+			"substitution_tag": "<%click here%>",
+			"text": "If you would like to unsubscribe and stop receiveing these emails <% click here %>."
+		}
+	}
+};
+
+
+sg.API(request, function (response) {
+	console.log(response.statusCode);
+	console.log(response.body);
+	console.log(response.headers);
+});
 
 // ###################  DB Customer to MailChimp Integration ######################
 // var customer_update_rule = new schedule.RecurrenceRule();
