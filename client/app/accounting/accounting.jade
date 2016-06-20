@@ -21,3 +21,68 @@ div(ng-include='"components/navbar/navbar.html"')
 				|  Check me out
 		button.btn.btn-default(type='submit', ng-click="submit_ezship_form()") Submit
 		button.btn.btn-danger(type='button', ng-click="analyse_ezshp_accounting()", ng-disabled="!with_btn_anaylse_enabled") Analyse
+	div(ng-hide="!summary")
+		h2.page-header Summary
+		ul
+			li.h4 收款記帳日期：{{balanced_document}}
+			li.h4 正常完成筆數：{{summary.balanced_records.length}} 件，應收帳款(未扣斗牛手續費)：{{summary.accounts_receivable | currency: "$": 0}} 元
+			li.h4 異常筆數：{{summary.issued_records.length}} 件，短收款項：{{summary.accounts_receivable_shortage | currency: "$": 0}} 元
+	div.panel.panel-default(ng-hide="!summary.issued_records")
+		.panel-heading 
+			h3 Issued Records(共有 {{summary.issued_records.length}} 件)
+		.panel-body
+			ol
+				li 短收款項：{{summary.accounts_receivable_shortage | currency: "$": 0}} 元
+				li 若『應執行動作』為“檢查訂單編號”，則到斗牛提供之每週報表檢查『商品備註』是否有“配送異動”。
+				li 若『應執行動作』為“檢查代收金額”，至斗牛官網查詢該筆訂單是否被退回物流中心，若是，請依問題件退回；若否，則客服斗牛追蹤該筆訂單
+		table.table.table-hover.table-bordered
+			tr
+				th 筆數
+				th 配送編號
+					br
+					input(ng-model="search_issued_records.ezship_id")
+				th 訂單編號
+					br
+					input(ng-model="search_issued_records.order_id")
+				th 斗牛代收金額
+					br
+					input(ng-model="search_issued_records.total")
+				th 短收
+				th 應執行動作
+			tr(ng-repeat="record in summary.issued_records | filter: search_issued_records")
+				td {{$index+1}}
+				td {{record.ezship_id}}
+				td {{record.order_id}}
+				td {{record.total | currency: "$": 0}}
+				td {{record.balanced | currency: "$": 0}}
+				td {{record.action}}
+	div.panel.panel-default(ng-hide="!summary.balanced_records")
+		.panel-heading 
+			h3 Balanced Records(共有 {{summary.balanced_records.length}} 件)
+		.panel-body
+			ol
+				li 收款記帳日期：{{balanced_document}}
+				li 應收帳款(未扣斗牛手續費)：{{summary.accounts_receivable | currency: "$": 0}} 元
+		table.table.table-hover.table-bordered
+			tr
+				th 筆數
+				th 配送編號
+					br
+					input(ng-model="search_balanced_records.ezship_id")
+				th 訂單編號
+					br
+					input(ng-model="search_balanced_records.order_id")
+				th 斗牛代收金額
+					br
+					input(ng-model="search_balanced_records.total")
+				th 短收
+				th 斗牛對帳文件
+				th 應執行動作
+			tr(ng-repeat="record in summary.balanced_records | filter: search_balanced_records")
+				td {{$index+1}}
+				td {{record.ezship_id}}
+				td {{record.order_id}}
+				td {{record.total | currency: "$": 0}}
+				td {{record.balanced | currency: "$": 0}}
+				td {{record.balanced_document}}
+				td {{record.action}}

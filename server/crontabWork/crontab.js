@@ -12,8 +12,6 @@ var winston = require('winston');
 var mailChimp = require('../api/thing/thing.controller.js');
 
 
-
-
 winston.add(winston.transports.File, {filename: 'Benson.log'}); 
 
 
@@ -48,29 +46,27 @@ var autoAddRewardCrontab = schedule.scheduleJob({hour: 23, minute: 0}, function(
 
 
 // ###################  DB Customer to MailChimp Integration ######################
-var customer_update_rule = new schedule.RecurrenceRule();
-	customer_update_rule.minute = new schedule.Range(0, 59, 1);
-	var syncCustomer2MailChimp = schedule.scheduleJob(customer_update_rule, function() {
-	var now = moment();
-	var today = moment().format('YYYY-MM-DD');
-	customer.getCustomerByDate(today)
-	.then(
-		function(rows) {
-			var ldata = [];
-			ldata = _.reduce(rows, function(ldata, row) {
-				ldata.push({name: row.firstname, email: row.email, telephone: row.telephone});
-				return ldata;
-			}, ldata);
-			mailChimp.addMCListSubscribers(api_config.mailChimp_lists_ids['customer_list'], ldata)
-			.then(function(data) {
-				console.log(moment().format('YYYY-MM-DD hh:mm') + ' customer list sync to mailchimp');
-				// console.log(data);
-			});
-		}
-	);
-});
-
-
+// var customer_update_rule = new schedule.RecurrenceRule();
+// customer_update_rule.minute = new schedule.Range(0, 59, 1);
+// var syncCustomer2MailChimp = schedule.scheduleJob(customer_update_rule, function() {
+// 	var now = moment();
+// 	var today = moment().format('YYYY-MM-DD');
+// 	customer.getCustomerByDate(today)
+// 	.then(
+// 		function(rows) {
+// 			var ldata = [];
+// 			ldata = _.reduce(rows, function(ldata, row) {
+// 				ldata.push({name: row.firstname, email: row.email, telephone: row.telephone});
+// 				return ldata;
+// 			}, ldata);
+// 			mailChimp.addMCListSubscribers(api_config.mailChimp_lists_ids['customer_list'], ldata)
+// 			.then(function(data) {
+// 				console.log(moment().format('YYYY-MM-DD hh:mm') + ' customer list sync to mailchimp');
+// 				// console.log(data);
+// 			});
+// 		}
+// 	);
+// });
 
 
 // ###################  Google Sheet to MailChimp Integration ######################

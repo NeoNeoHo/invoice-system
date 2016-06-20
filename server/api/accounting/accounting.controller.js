@@ -38,11 +38,11 @@ exports.checkEzship = function(req, res) {
 		}
 		records = _.map(records, function(lrecord) {
 			lrecord['order_id'] = parseInt( (lrecord['商品備註'].split('--')[0]) ? (lrecord['商品備註'].split('--')[0]) : (lrecord['拍賣編號'] ? lrecord['拍賣編號'] : 0));
+			lrecord['total'] = Math.round(parseFloat(lrecord['代收金額']));
 			if(isNaN(lrecord['order_id'])) {
 				lrecord['order_id'] = 0;
-				summary.issued_records.push({ezship_no: lrecord['配送編號'], action: '檢查訂單編號'});
+				summary.issued_records.push({ezship_id: lrecord['配送編號'], action: '檢查訂單編號', total: lrecord.total, balanced: -lrecord.total});
 			}
-			lrecord['total'] = Math.round(parseFloat(lrecord['代收金額']));
 			return lrecord;
 		})
 
@@ -57,7 +57,7 @@ exports.checkEzship = function(req, res) {
 				var lorder = _.find(orders, {'order_id': lrecord.order_id});
 				if(lorder) {
 					var balanced = lrecord.total - Math.round(parseFloat(lorder.total));
-					compared_result.push({ezship_no: lrecord['配送編號'], order_id: lrecord.order_id, balanced: balanced, total: lrecord.total, action: (balanced == 0) ? 'Check OK' : '檢查代收金額'});
+					compared_result.push({ezship_id: lrecord['配送編號'], order_id: lrecord.order_id, balanced: balanced, total: lrecord.total, action: (balanced == 0) ? 'Check OK' : '檢查代收金額'});
 				}
 				return compared_result;
 			}, []);
@@ -67,15 +67,17 @@ exports.checkEzship = function(req, res) {
 				lsum += lrecord.total;
 				return lsum;
 			}, 0);
+			summary['accounts_receivable_shortage'] = _.reduce(summary['issued_records'], function(lsum, lrecord) {
+				lsum += lrecord.balanced;
+				return lsum;
+			}, 0);
 			console.log(summary);
 
 			// Update balanced orders' status to 34
 			summary.balanced_records = _.map(summary.balanced_records, function(lrecord) {
 				lrecord.order_status_id = 34;
 				lrecord.balanced_document = balanced_document;
-				lrecord.date_added = new Date();
 				lrecord.date_modified = new Date();
-				lrecord.comment = '已開統一發票';
 				return lrecord;
 			});
 			var sqls = Order.updateBulkSql('oc_order', _.map(summary.balanced_records, _.partialRight(_.pick, ['order_status_id', 'balanced_document', 'date_modified'])), _.map(summary.balanced_records, _.partialRight(_.pick, ['order_id'])));

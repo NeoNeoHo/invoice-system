@@ -46,8 +46,9 @@ angular.module 'goRocketApp'
 				console.log(err)
 
 	$scope.analyse_ezshp_accounting = () ->
-		$http.get 'api/accountings/check/ezship/'+$scope.server_file_path+ '/'+$scope.balanced_document, ((resp) ->
-			console.log resp
+		$http.get('api/accountings/check/ezship/' + $scope.server_file_path + '/' + $scope.balanced_document).then ((resp) ->
+			console.log(resp.data)
+			$scope.summary = resp.data
 			return
 		), (err) ->
 			console.log err.status
