@@ -71,7 +71,7 @@ exports.checkEzship = function(req, res) {
 				lsum += lrecord.balanced;
 				return lsum;
 			}, 0);
-			console.log(summary);
+			// console.log(summary);
 
 			// Update balanced orders' status to 34
 			summary.balanced_records = _.map(summary.balanced_records, function(lrecord) {
@@ -82,7 +82,7 @@ exports.checkEzship = function(req, res) {
 			});
 			var sqls = Order.updateBulkSql('oc_order', _.map(summary.balanced_records, _.partialRight(_.pick, ['order_status_id', 'balanced_document', 'date_modified'])), _.map(summary.balanced_records, _.partialRight(_.pick, ['order_id'])));
 			// sqls = sqls + '; ' + Order.insertBulkSql('oc_order_history', _.map(summary.balanced_records, _.partialRight(_.pick, ['order_id', 'order_status_id', 'date_added', 'comment'])));
-			console.log(sqls);
+			// console.log(sqls);
 			if(sqls.length > 0) {
 				mysql_pool.getConnection(function(err, connection){
 					connection.query(sqls,  function(err, rows) {	

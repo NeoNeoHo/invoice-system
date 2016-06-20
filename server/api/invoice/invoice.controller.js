@@ -5,6 +5,7 @@ var q = require('q');
 var Invoice = require('./invoice.model');
 var mysql = require('mysql');
 var db_config = require('../../config/db_config.js');
+var Order = require('../../api/order/order.controller.js');
 var mysql_connection = db_config.mysql_connection;
 var mysql_pool = db_config.mysql_pool;
 var js2xmlparser = require('js2xmlparser');
@@ -48,7 +49,6 @@ exports.createInvoiceNo = function(req, res) {
 		var lyear = today.getFullYear();   // getYear() -> start from 1900
 		var lmonth = today.getMonth() + 1; // getMonth() -> start from 0
 		var lday = today.getDate();
-		var lorder_id = lorders[0].order_id;
 
 		var p1 = getInvoiceSetting();
 		var p2 = getLastInvoiceNo(lyear, lmonth);
@@ -60,7 +60,6 @@ exports.createInvoiceNo = function(req, res) {
 		.then(function(datas) {
 			var invoice_settings = datas[0];
 			var last_invoice_no = datas[1][0].invoice_no;
-			var last_order_id =  datas[1][0].order_id;
 			var invoice_setting = _.find(invoice_settings, function(lset) {
 				return (lset.year == lyear) && (lset.month == lmonth);
 			});
@@ -141,6 +140,53 @@ exports.destroy = function(req, res) {
 	});
 };
 
+function getNoInvoiceOrders(initial_date) {
+	var defer = q.defer();
+	var sql_string = 'select order_id, order_status_id from oc_order where invoice_no = 0 and order_status_id in (21, 29, 34) and date_added >= '+mysql_connection.escape(initial_date)+' order by order_id asc;';
+	mysql_pool.getConnection(function(err, connection){
+		connection.query(sql_string, function(err, rows){
+			if (err) {
+				defer.reject(err);
+			}
+			connection.release();
+			defer.resolve(rows);
+		});
+	});
+	return defer.promise;
+}
+
+function setInvoices(start_invoice_no, invoice_prefix, orders) {
+	var defer = q.defer();
+	var update_coll = [];
+	var error_order = [];
+	var result = {};
+	_.forEach(orders, function(lorder) {
+		var ltoday = new Date();
+		update_coll.push({order_id: lorder.order_id, invoice_no: start_invoice_no, invoice_prefix: invoice_prefix, date_modified: ltoday, date_added: ltoday, order_status_id: lorder.order_status_id, comment: '已開統一發票: '+invoice_prefix+start_invoice_no});
+		start_invoice_no += 1;
+	});
+
+	var sql_string = Order.updateBulkSql('oc_order', _.map(update_coll, _.partialRight(_.pick, ['invoice_no', 'invoice_prefix', 'date_modified'])), _.map(update_coll, _.partialRight(_.pick, ['order_id'])));
+	sql_string = sql_string + '; ' + Order.insertBulkSql('oc_order_history', _.map(update_coll, _.partialRight(_.pick, ['order_id', 'order_status_id', 'date_added', 'comment'])));
+	if(sql_string.length > 0) {
+		mysql_pool.getConnection(function(err, connection){
+			connection.query(sql_string, function(err, rows) {
+				if (err) {
+					console.log(err);
+					defer.reject(err);
+				}
+				result['fails'] = error_order;
+				result['success'] = update_coll;
+				connection.release();
+				defer.resolve(result);
+			});
+		});
+	}
+	else {
+		defer.resolve('');
+	}
+	return defer.promise;
+}
 
 exports.AutoCreateInvoiceNo = function(initial_date) {
 	getNoInvoiceOrders(initial_date)
@@ -148,13 +194,11 @@ exports.AutoCreateInvoiceNo = function(initial_date) {
 		if(orders.length == 0) {
 			return false;
 		}
-
 		var lorders = orders;
 		var today = new Date();
 		var lyear = today.getFullYear();   // getYear() -> start from 1900
 		var lmonth = today.getMonth() + 1; // getMonth() -> start from 0
 		var lday = today.getDate();
-		var lorder_id = lorders[0].order_id;
 
 		var p1 = getInvoiceSetting();
 		var p2 = getLastInvoiceNo(lyear, lmonth);
@@ -166,7 +210,6 @@ exports.AutoCreateInvoiceNo = function(initial_date) {
 		.then(function(datas) {
 			var invoice_settings = datas[0];
 			var last_invoice_no = datas[1][0].invoice_no;
-			var last_order_id =  datas[1][0].order_id;
 			var invoice_setting = _.find(invoice_settings, function(lset) {
 				return (lset.year == lyear) && (lset.month == lmonth);
 			});
@@ -187,7 +230,8 @@ exports.AutoCreateInvoiceNo = function(initial_date) {
 					setInvoices(start_invoice_no, invoice_prefix, lorders)
 					.then(function(result) {
 						return result;
-					});					}
+					});					
+				}
 			}
 			if(last_invoice_no > 0) {    //  如果不是本月的第一筆單，則發票號碼延續下去
 				var start_invoice_no = last_invoice_no + 1;
@@ -264,62 +308,6 @@ function getInvoiceSetting() {
 			defer.resolve(rows);
 		});
 	});
-	return defer.promise;
-}
-
-function getNoInvoiceOrders(initial_date) {
-	var defer = q.defer();
-	var sql_string = 'select order_id from oc_order where invoice_no = 0 and order_status_id in (21, 29, 34) and date_added >= '+mysql_connection.escape(initial_date)+' order by order_id asc;';
-	mysql_pool.getConnection(function(err, connection){
-		connection.query(sql_string, function(err, rows){
-			if (err) {
-				defer.reject(err);
-			}
-			connection.release();
-			defer.resolve(rows);
-		});
-	});
-	return defer.promise;
-}
-
-function setInvoices(start_invoice_no, invoice_prefix, orders) {
-	var defer = q.defer();
-	var ret = [];
-	var error_order = [];
-	var result = {};
-	_.forEach(orders, function(lorder) {
-		var ltoday = new Date();
-		ret.push({order_id: lorder.order_id, invoice_no: start_invoice_no, invoice_prefix: invoice_prefix, date_modified: ltoday});
-		start_invoice_no += 1;
-	});
-	// console.log(ret);
-	var sql_string = '';
-	_.forEach(ret, function(update_order) {
-		var sub_string = updateDictSql('oc_order', _.pick(update_order, ['invoice_no', 'invoice_prefix', 'date_modified']), _.pick(update_order, 'order_id'));
-		if(sql_string.length == 0) {
-			sql_string = sub_string;
-		}
-		else {
-			sql_string = sql_string + '; ' + sub_string;
-		}
-	});
-	if(sql_string.length > 0) {
-		mysql_pool.getConnection(function(err, connection){
-			connection.query(sql_string, function(err, rows) {
-				if (err) {
-					console.log(err);
-					defer.reject(err);
-				}
-				result['fails'] = error_order;
-				result['success'] = ret;
-				connection.release();
-				defer.resolve(result);
-			});
-		});
-	}
-	else {
-		defer.resolve('');
-	}
 	return defer.promise;
 }
 
