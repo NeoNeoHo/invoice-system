@@ -6,6 +6,7 @@ var Invoice = require('./invoice.model');
 var mysql = require('mysql');
 var db_config = require('../../config/db_config.js');
 var Order = require('../../api/order/order.controller.js');
+var Sendgrid = require('../../api/sendgrid/sendgrid.controller.js');
 var mysql_connection = db_config.mysql_connection;
 var mysql_pool = db_config.mysql_pool;
 var js2xmlparser = require('js2xmlparser');
@@ -71,7 +72,13 @@ exports.createInvoiceNo = function(req, res) {
 						var start_invoice_no = (Math.floor(data[0].invoice_no / 50) + 1) * 50;
 						setInvoices(start_invoice_no, invoice_prefix, lorders)
 						.then(function(result) {
-							return res.status(200).json(result);
+							sendInvoiceMail(_.pluck(lorders, 'order_id')).then(function(resp) {
+								return res.status(200).json(resp);
+							}, function(err) {
+								return handleError(res, err);
+							});
+						}, function(err) {
+							return handleError(res, err);
 						});
 					});
 				}
@@ -79,14 +86,27 @@ exports.createInvoiceNo = function(req, res) {
 					var start_invoice_no = invoice_setting.start_no;	
 					setInvoices(start_invoice_no, invoice_prefix, lorders)
 					.then(function(result) {
-						return res.status(200).json(result);
-					});					}
+						sendInvoiceMail(_.pluck(lorders, 'order_id')).then(function(resp) {
+							return res.status(200).json(resp);
+						}, function(err) {
+							return handleError(res, err);
+						});
+					}, function(err) {
+						return handleError(res, err);
+					});
+				}
 			}
 			if(last_invoice_no > 0) {    //  如果不是本月的第一筆單，則發票號碼延續下去
 				var start_invoice_no = last_invoice_no + 1;
 				setInvoices(start_invoice_no, invoice_prefix, lorders)
 				.then(function(result) {
-					return res.status(200).json(result);
+					sendInvoiceMail(_.pluck(lorders, 'order_id')).then(function(resp) {
+						return res.status(200).json(resp);
+					}, function(err) {
+						return handleError(res, err);
+					});
+				}, function(err) {
+					return handleError(res, err);
 				});
 			}
 			
@@ -186,7 +206,22 @@ function setInvoices(start_invoice_no, invoice_prefix, orders) {
 		defer.resolve('');
 	}
 	return defer.promise;
-}
+};
+
+var sendInvoiceMail = function(order_list) {
+	var defer = q.defer();
+	Sendgrid.getOrdersPersonalizations(order_list).then(function(personalizations_coll) {
+		console.log(personalizations_coll);
+		Sendgrid.sendInvoiceMail(personalizations_coll).then(function(resp) {
+			defer.resolve(resp);
+		}, function(err) {
+			defer.reject(err);
+		});
+	}, function(err) {
+		defer.reject(err);
+	});
+	return defer.promise;
+};
 
 exports.AutoCreateInvoiceNo = function(initial_date) {
 	getNoInvoiceOrders(initial_date)
@@ -221,7 +256,11 @@ exports.AutoCreateInvoiceNo = function(initial_date) {
 						var start_invoice_no = (Math.floor(data[0].invoice_no / 50) + 1) * 50;
 						setInvoices(start_invoice_no, invoice_prefix, lorders)
 						.then(function(result) {
-							return result;
+							sendInvoiceMail(_.pluck(lorders, 'order_id')).then(function(resp) {
+								return resp;
+							}, function(err) {
+								return err;
+							});
 						});
 					});
 				}
@@ -229,7 +268,11 @@ exports.AutoCreateInvoiceNo = function(initial_date) {
 					var start_invoice_no = invoice_setting.start_no;	
 					setInvoices(start_invoice_no, invoice_prefix, lorders)
 					.then(function(result) {
-						return result;
+						sendInvoiceMail(_.pluck(lorders, 'order_id')).then(function(resp) {
+							return resp;
+						}, function(err) {
+							return err;
+						});
 					});					
 				}
 			}
@@ -237,7 +280,11 @@ exports.AutoCreateInvoiceNo = function(initial_date) {
 				var start_invoice_no = last_invoice_no + 1;
 				setInvoices(start_invoice_no, invoice_prefix, lorders)
 				.then(function(result) {
-					return result;
+					sendInvoiceMail(_.pluck(lorders, 'order_id')).then(function(resp) {
+						return resp;
+					}, function(err) {
+						return err;
+					});
 				});
 			}
 			

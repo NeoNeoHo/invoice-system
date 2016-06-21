@@ -9,7 +9,8 @@ var api_config = require('../config/api_config');
 var schedule = require('node-schedule');
 var moment = require('moment');
 var winston = require('winston');
-var mailChimp = require('../api/thing/thing.controller.js');
+var mailchimp = require('../api/thing/thing.controller.js');
+var utf8 = require('utf8');
 
 
 winston.add(winston.transports.File, {filename: 'Benson.log'}); 
@@ -44,96 +45,6 @@ var autoAddRewardCrontab = schedule.scheduleJob({hour: 23, minute: 0}, function(
 });
 
 
-
-// ###################  SendGrid Integration ######################
-var sg = require('sendgrid').SendGrid(api_config.SENDGRID_API_KEY);
-var request = sg.emptyRequest();
-
-request.method = 'POST';
-request.path = '/v3/mail/send';
-request.body = {
-	"content": [
-	{
-		"type": "text/html",
-		"value": " "
-	}
-	],
-	"from": {
-		"email": "benson@vecsgardenia.com",
-		"name": "Benson Ho"
-	},
-	"personalizations": [
-		{
-			"subject": "Hello, World!",
-			"substitutions": {
-				"-name-": "Benson",
-
-				"-order_id-": "10293",
-
-				"-invoice_no-": "FD12345678"
-			},
-			"to": [
-				{
-					"email": "b95042@gmail.com"
-				}
-			]
-		},
-		{
-			"subject": "Hello, World!",
-			"substitutions": {
-				"-name-": "Emily",
-
-				"-order_id-": "10293",
-
-				"-invoice_no-": "FD12345678"
-			},
-			"to": [
-				{
-					"email": "b95042@gmail.com"
-				}
-			]
-		}
-	],
-	"reply_to": {
-		"email": "benson@vecsgardenia.com",
-		"name": "Benson Ho"
-	},
-	"subject": "Hello, World!",
-	"template_id": "71abec21-e89e-4bf1-aca0-79fa509fae4c",
-	// "send_at": Math.round(new Date().getTime()/1000),
-	"tracking_settings": {
-		"click_tracking": {
-			"enable": true,
-			"enable_text": true
-		},
-		"ganalytics": {
-			"enable": true,
-			"utm_campaign": "sendgrid",
-			"utm_content": "sendgrid",
-			"utm_medium": "email",
-			"utm_name": "invoice",
-			"utm_term": ""
-		},
-		"open_tracking": {
-			"enable": true,
-			"substitution_tag": "%opentrack"
-		},
-		"subscription_tracking": {
-			"enable": true,
-			"html": "If you would like to unsubscribe and stop receiving these emails <% clickhere %>.",
-			"substitution_tag": "<%click here%>",
-			"text": "If you would like to unsubscribe and stop receiveing these emails <% click here %>."
-		}
-	}
-};
-
-
-sg.API(request, function (response) {
-	console.log(response.statusCode);
-	console.log(response.body);
-	console.log(response.headers);
-});
-
 // ###################  DB Customer to MailChimp Integration ######################
 // var customer_update_rule = new schedule.RecurrenceRule();
 // customer_update_rule.minute = new schedule.Range(0, 59, 1);
@@ -148,7 +59,7 @@ sg.API(request, function (response) {
 // 				ldata.push({name: row.firstname, email: row.email, telephone: row.telephone});
 // 				return ldata;
 // 			}, ldata);
-// 			mailChimp.addMCListSubscribers(api_config.mailChimp_lists_ids['customer_list'], ldata)
+// 			mailchimp.addMCListSubscribers(api_config.mailChimp_lists_ids['customer_list'], ldata)
 // 			.then(function(data) {
 // 				console.log(moment().format('YYYY-MM-DD hh:mm') + ' customer list sync to mailchimp');
 // 				// console.log(data);
@@ -180,7 +91,7 @@ sg.API(request, function (response) {
 // 				ldata.push({name: row['您的姓名'], email: row['您的email'], telephone: row['您的電話'], address: row['您的地址']});
 // 				return ldata;
 // 			}, ldata);
-// 			mailChimp.addMCListSubscribers(api_config.mailChimp_lists_ids['mrt_leads'], ldata)
+// 			mailchimp.addMCListSubscribers(api_config.mailChimp_lists_ids['mrt_leads'], ldata)
 // 			.then(function(data) {
 // 				console.log(moment().format('YYYY-MM-DD hh:mm') + ' google mail list sync to mailchimp');
 // 			});
