@@ -10,6 +10,7 @@ var schedule = require('node-schedule');
 var moment = require('moment');
 var winston = require('winston');
 var mailchimp = require('../api/thing/thing.controller.js');
+var sendgrid = require('../api/sendgrid/sendgrid.controller.js');
 var utf8 = require('utf8');
 
 
@@ -44,29 +45,40 @@ var autoAddRewardCrontab = schedule.scheduleJob({hour: 23, minute: 0}, function(
 	rewards.removeRewardsWithStatusAndDate(45, today).then(function(result) {winston.info({message: result})});  // check everyday, for 宅配未取，取消他的紅利點數
 });
 
-
-// ###################  DB Customer to MailChimp Integration ######################
-// var customer_update_rule = new schedule.RecurrenceRule();
-// customer_update_rule.minute = new schedule.Range(0, 59, 1);
-// var syncCustomer2MailChimp = schedule.scheduleJob(customer_update_rule, function() {
-// 	var now = moment();
-// 	var today = moment().format('YYYY-MM-DD');
-// 	customer.getCustomerByDate(today)
-// 	.then(
-// 		function(rows) {
-// 			var ldata = [];
-// 			ldata = _.reduce(rows, function(ldata, row) {
-// 				ldata.push({name: row.firstname, email: row.email, telephone: row.telephone});
-// 				return ldata;
-// 			}, ldata);
-// 			mailchimp.addMCListSubscribers(api_config.mailChimp_lists_ids['customer_list'], ldata)
-// 			.then(function(data) {
-// 				console.log(moment().format('YYYY-MM-DD hh:mm') + ' customer list sync to mailchimp');
-// 				// console.log(data);
-// 			});
-// 		}
-// 	);
+// sendgrid.getOrdersPersonalizations([33024, 33019, 32998]).then(function(personalizations_coll) {
+// 	console.log(personalizations_coll);
+// 	sendgrid.sendInvoiceMail(personalizations_coll).then(function(resp) {
+// 		console.log(resp);
+// 	}, function(err) {
+// 		console.log(err);
+// 	});
+// }, function(err) {
+// 	console.log(err);
 // });
+
+
+###################  DB Customer to MailChimp Integration ######################
+var customer_update_rule = new schedule.RecurrenceRule();
+customer_update_rule.minute = new schedule.Range(0, 59, 1);
+var syncCustomer2MailChimp = schedule.scheduleJob(customer_update_rule, function() {
+	var now = moment();
+	var today = moment().format('YYYY-MM-DD');
+	customer.getCustomerByDate(today)
+	.then(
+		function(rows) {
+			var ldata = [];
+			ldata = _.reduce(rows, function(ldata, row) {
+				ldata.push({name: row.firstname, email: row.email, telephone: row.telephone});
+				return ldata;
+			}, ldata);
+			mailchimp.addMCListSubscribers(api_config.mailChimp_lists_ids['customer_list'], ldata)
+			.then(function(data) {
+				console.log(moment().format('YYYY-MM-DD hh:mm') + ' customer list sync to mailchimp');
+				// console.log(data);
+			});
+		}
+	);
+});
 
 
 // ###################  Google Sheet to MailChimp Integration ######################

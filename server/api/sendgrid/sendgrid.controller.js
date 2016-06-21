@@ -30,8 +30,9 @@ exports.getOrdersPersonalizations = function(order_list) {
 	Order.getOrders(order_list).then(function(order_coll) {
 		personalizations_coll = _.reduce(order_coll, function(lpersonalization, order_obj) {
 			lpersonalization.push({
-				"subject": order_obj.firstname+', 您的發票號碼來囉！',
+				// "subject": String(subject_title),
 				"substitutions": {
+					"-subject-": 'Hi '+ order_obj.firstname+', '+"您的發票號碼來囉",
 					"-name-": order_obj.firstname,
 					"-order_id-": String(order_obj.order_id),
 					"-invoice_no-": order_obj.invoice_prefix+order_obj.invoice_no

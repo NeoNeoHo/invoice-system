@@ -10,41 +10,9 @@ exports.invoice_template = function(personalizations_coll) {
 		],
 		"from": {
 			"email": "benson@vecsgardenia.com",
-			"name": "Benson at 嘉丹妮爾"
+			"name": "嘉丹妮爾的訂單小提醒"
 		},
 		"personalizations": personalizations_coll,
-		// "personalizations": [
-		// 	{
-		// 		"subject": "Hello, World!",
-		// 		"substitutions": {
-		// 			"-name-": "Benson",
-
-		// 			"-order_id-": "10293",
-
-		// 			"-invoice_no-": "FD12345678"
-		// 		},
-		// 		"to": [
-		// 			{
-		// 				"email": "b95042@gmail.com"
-		// 			}
-		// 		]
-		// 	},
-		// 	{
-		// 		"subject": "Hello, World!",
-		// 		"substitutions": {
-		// 			"-name-": "Emily",
-
-		// 			"-order_id-": "10293",
-
-		// 			"-invoice_no-": "FD12345678"
-		// 		},
-		// 		"to": [
-		// 			{
-		// 				"email": "b95042@gmail.com"
-		// 			}
-		// 		]
-		// 	}
-		// ],
 		"reply_to": {
 			"email": "benson@vecsgardenia.com",
 			"name": "Benson at 嘉丹妮爾"
