@@ -35,6 +35,69 @@ exports.show = function(req, res) {
 	});
 };
 
+function getNoInvoiceOrders(initial_date) {
+	var defer = q.defer();
+	var sql_string = 'select order_id, order_status_id from oc_order where invoice_no = 0 and order_status_id in (21, 29, 34) and date_added >= '+mysql_connection.escape(initial_date)+' order by order_id asc;';
+	mysql_pool.getConnection(function(err, connection){
+		connection.query(sql_string, function(err, rows){
+			if (err) {
+				defer.reject(err);
+			}
+			connection.release();
+			defer.resolve(rows);
+		});
+	});
+	return defer.promise;
+}
+
+function setInvoices(start_invoice_no, invoice_prefix, orders) {
+	var defer = q.defer();
+	var update_coll = [];
+	var error_order = [];
+	var result = {};
+	_.forEach(orders, function(lorder) {
+		var ltoday = new Date();
+		update_coll.push({order_id: lorder.order_id, invoice_no: start_invoice_no, invoice_prefix: invoice_prefix, date_modified: ltoday, date_added: ltoday, order_status_id: lorder.order_status_id, comment: '已開統一發票: '+invoice_prefix+start_invoice_no});
+		start_invoice_no += 1;
+	});
+
+	var sql_string = Order.updateBulkSql('oc_order', _.map(update_coll, _.partialRight(_.pick, ['invoice_no', 'invoice_prefix', 'date_modified'])), _.map(update_coll, _.partialRight(_.pick, ['order_id'])));
+	sql_string = sql_string + '; ' + Order.insertBulkSql('oc_order_history', _.map(update_coll, _.partialRight(_.pick, ['order_id', 'order_status_id', 'date_added', 'comment'])));
+	if(sql_string.length > 0) {
+		mysql_pool.getConnection(function(err, connection){
+			connection.query(sql_string, function(err, rows) {
+				if (err) {
+					console.log(err);
+					defer.reject(err);
+				}
+				result['fails'] = error_order;
+				result['success'] = update_coll;
+				connection.release();
+				defer.resolve(result);
+			});
+		});
+	}
+	else {
+		defer.resolve('');
+	}
+	return defer.promise;
+};
+
+var sendInvoiceMail = function(order_list) {
+	var defer = q.defer();
+	Sendgrid.getOrdersPersonalizations(order_list).then(function(personalizations_coll) {
+		console.log(personalizations_coll);
+		Sendgrid.sendInvoiceMail(personalizations_coll).then(function(resp) {
+			defer.resolve(resp);
+		}, function(err) {
+			defer.reject(err);
+		});
+	}, function(err) {
+		defer.reject(err);
+	});
+	return defer.promise;
+};
+
 // Creates a new invoice in the DB.
 exports.createInvoiceNo = function(req, res) {
 	var date = getFormatDate(req.body.date);
@@ -158,69 +221,6 @@ exports.destroy = function(req, res) {
 			return res.status(204).send('No Content');
 		});
 	});
-};
-
-function getNoInvoiceOrders(initial_date) {
-	var defer = q.defer();
-	var sql_string = 'select order_id, order_status_id from oc_order where invoice_no = 0 and order_status_id in (21, 29, 34) and date_added >= '+mysql_connection.escape(initial_date)+' order by order_id asc;';
-	mysql_pool.getConnection(function(err, connection){
-		connection.query(sql_string, function(err, rows){
-			if (err) {
-				defer.reject(err);
-			}
-			connection.release();
-			defer.resolve(rows);
-		});
-	});
-	return defer.promise;
-}
-
-function setInvoices(start_invoice_no, invoice_prefix, orders) {
-	var defer = q.defer();
-	var update_coll = [];
-	var error_order = [];
-	var result = {};
-	_.forEach(orders, function(lorder) {
-		var ltoday = new Date();
-		update_coll.push({order_id: lorder.order_id, invoice_no: start_invoice_no, invoice_prefix: invoice_prefix, date_modified: ltoday, date_added: ltoday, order_status_id: lorder.order_status_id, comment: '已開統一發票: '+invoice_prefix+start_invoice_no});
-		start_invoice_no += 1;
-	});
-
-	var sql_string = Order.updateBulkSql('oc_order', _.map(update_coll, _.partialRight(_.pick, ['invoice_no', 'invoice_prefix', 'date_modified'])), _.map(update_coll, _.partialRight(_.pick, ['order_id'])));
-	sql_string = sql_string + '; ' + Order.insertBulkSql('oc_order_history', _.map(update_coll, _.partialRight(_.pick, ['order_id', 'order_status_id', 'date_added', 'comment'])));
-	if(sql_string.length > 0) {
-		mysql_pool.getConnection(function(err, connection){
-			connection.query(sql_string, function(err, rows) {
-				if (err) {
-					console.log(err);
-					defer.reject(err);
-				}
-				result['fails'] = error_order;
-				result['success'] = update_coll;
-				connection.release();
-				defer.resolve(result);
-			});
-		});
-	}
-	else {
-		defer.resolve('');
-	}
-	return defer.promise;
-};
-
-var sendInvoiceMail = function(order_list) {
-	var defer = q.defer();
-	Sendgrid.getOrdersPersonalizations(order_list).then(function(personalizations_coll) {
-		console.log(personalizations_coll);
-		Sendgrid.sendInvoiceMail(personalizations_coll).then(function(resp) {
-			defer.resolve(resp);
-		}, function(err) {
-			defer.reject(err);
-		});
-	}, function(err) {
-		defer.reject(err);
-	});
-	return defer.promise;
 };
 
 exports.AutoCreateInvoiceNo = function(initial_date) {

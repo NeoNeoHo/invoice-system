@@ -11,6 +11,8 @@ var Order = require('../../api/order/order.controller.js');
 var EZSHIP_DIR = upload_config.accounting.ezship_dir;
 var EZCAT_DIR = upload_config.accounting.ezcat_dir;
 
+var EZSHIP_COMPLETE_ORDER_STATUS_ID = 34;
+
 // Get list of orders
 exports.index = function(req, res) {
 	var order_id = req.params.order_id ? req.params.order_id : 9999999;
@@ -46,13 +48,20 @@ exports.checkEzship = function(req, res) {
 			return lrecord;
 		})
 
-		// Kick out credit card orders
+		// ############  Kick out credit card orders ###################
 		records = _.reject(records, function(lrecord) {
 			return lrecord['服務類別'].includes('取貨不付款');
 		})
+
 		var order_list = _.pluck(records, 'order_id');
 
 		Order.getOrders(order_list).then(function(orders) {
+
+			// ############  Kick out whose status are already being 'COMPLETED' ###################
+			orders = _.reject(orders, function(lorder) {
+				return lorder.order_status_id == EZSHIP_COMPLETE_ORDER_STATUS_ID;
+			});
+
 			var compared_result = _.reduce(records, function(compared_result, lrecord) {
 				var lorder = _.find(orders, {'order_id': lrecord.order_id});
 				if(lorder) {
@@ -71,7 +80,6 @@ exports.checkEzship = function(req, res) {
 				lsum += lrecord.balanced;
 				return lsum;
 			}, 0);
-			// console.log(summary);
 
 			// Update balanced orders' status to 34
 			summary.balanced_records = _.map(summary.balanced_records, function(lrecord) {
@@ -81,8 +89,7 @@ exports.checkEzship = function(req, res) {
 				return lrecord;
 			});
 			var sqls = Order.updateBulkSql('oc_order', _.map(summary.balanced_records, _.partialRight(_.pick, ['order_status_id', 'balanced_document', 'date_modified'])), _.map(summary.balanced_records, _.partialRight(_.pick, ['order_id'])));
-			// sqls = sqls + '; ' + Order.insertBulkSql('oc_order_history', _.map(summary.balanced_records, _.partialRight(_.pick, ['order_id', 'order_status_id', 'date_added', 'comment'])));
-			// console.log(sqls);
+
 			if(sqls.length > 0) {
 				mysql_pool.getConnection(function(err, connection){
 					connection.query(sqls,  function(err, rows) {	
