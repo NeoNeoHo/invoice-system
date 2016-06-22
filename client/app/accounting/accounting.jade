@@ -11,9 +11,10 @@ div(ng-include='"components/navbar/navbar.html"')
 	//- 			span.glyphicon.glyphicon-trash.pull-right
 	form(name="ezship_form")
 		h2.page-header Ezship Form
+			small.pull-right To Do: 計算出每筆訂單手續費...
 		.form-group
 			label(for='exampleInputFile') File input
-			input#ezhip_file(type='file', name="ezship_file", ngf-select, ng-model="ezship_file")
+			input#ezhip_file(type='file', name="ezship_file", ngf-select, ng-model="ezship_file", ng-change="summary = ''")
 			p.help-block Example block-level help text here.
 		.checkbox
 			label
@@ -26,10 +27,14 @@ div(ng-include='"components/navbar/navbar.html"')
 		ul
 			li.h4 收款記帳日期：{{balanced_document}}
 			li.h4 正常完成筆數：{{summary.balanced_records.length}} 件，應收帳款(未扣斗牛手續費)：{{summary.accounts_receivable | currency: "$": 0}} 元
-			li.h4 異常筆數：{{summary.issued_records.length}} 件，短收款項：{{summary.accounts_receivable_shortage | currency: "$": 0}} 元
+			li.h4 信用卡筆數：{{summary.credit_card_records.length}} 件
+			li.h4 重複記錄正常訂單(同收款記帳日期)：{{summary.double_counted_normal_records.length}} 件
+			li.h4(style="color:red") 重複記錄異常訂單：{{summary.double_counted_anomaly_records.length}} 件
+			li.h4(style="color:red") 訂單初始狀態並非“已出貨超商付款”：{{summary.initial_status_anomaly_records.length}} 件
+			li.h4(style="color:red") 其他異常筆數：{{summary.issued_records.length}} 件，短收款項：{{summary.accounts_receivable_shortage | currency: "$": 0}} 元
 	div.panel.panel-default(ng-hide="!summary.issued_records")
 		.panel-heading 
-			h3 Issued Records(共有 {{summary.issued_records.length}} 件)
+			h3 其他異常筆數(共有 {{summary.issued_records.length}} 件)
 		.panel-body
 			ol
 				li 短收款項：{{summary.accounts_receivable_shortage | currency: "$": 0}} 元
@@ -55,6 +60,61 @@ div(ng-include='"components/navbar/navbar.html"')
 				td {{record.order_id}}
 				td {{record.total | currency: "$": 0}}
 				td {{record.balanced | currency: "$": 0}}
+				td {{record.action}}
+	div.panel.panel-default(ng-hide="!summary.double_counted_anomaly_records.length")
+		.panel-heading 
+			h3 重複記錄異常訂單(共有 {{summary.double_counted_anomaly_records.length}} 件)
+		.panel-body
+			ol
+				li 短收款項：{{summary.accounts_receivable_double_counted | currency: "$": 0}} 元
+				li 追查此單第一次關帳文件，若有出入，打給斗牛追查。
+		table.table.table-hover.table-bordered
+			tr
+				th 筆數
+				th 訂單編號
+					br
+					input(ng-model="search_double_counted_records.order_id")
+				th 金額
+					br
+					input(ng-model="search_double_counted_records.total")
+				th 短收
+				th 斗牛對帳文件
+					br
+					input(ng-model="search_double_counted_records.balanced_document")
+				th 應執行動作
+			tr(ng-repeat="record in summary.double_counted_anomaly_records | filter: search_double_counted_records")
+				td {{$index+1}}
+				td {{record.order_id}}
+				td {{record.total | currency: "$": 0}}
+				td {{record.balanced | currency: "$": 0}}
+				td {{record.balanced_document}}
+				td {{record.action}}
+	div.panel.panel-default(ng-hide="!summary.initial_status_anomaly_records.length")
+		.panel-heading 
+			h3 訂單初始狀態並非“已出貨超商付款”(共有 {{summary.initial_status_anomaly_records.length}} 件)
+		.panel-body
+			ol
+				li 追查此單第一次關帳文件，若有出入，打給斗牛追查。
+		table.table.table-hover.table-bordered
+			tr
+				th 筆數
+				th 訂單編號
+					br
+					input(ng-model="search_initial_status_anomaly_records.order_id")
+				th 金額
+					br
+					input(ng-model="search_initial_status_anomaly_records.total")
+				th 短收
+				th 斗牛對帳文件
+					br
+					input(ng-model="search_initial_status_anomaly_records.balanced_document")
+				th 應執行動作
+			tr(ng-repeat="record in summary.initial_status_anomaly_records | filter: search_initial_status_anomaly_records")
+				td {{$index+1}}
+				td {{record.order_id}}
+				td {{record.total | currency: "$": 0}}
+				td {{record.balanced | currency: "$": 0}}
+				td {{record.balanced_document}}
 				td {{record.action}}
 	div.panel.panel-default(ng-hide="!summary.balanced_records")
 		.panel-heading 

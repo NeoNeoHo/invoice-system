@@ -20,7 +20,7 @@ header#banner.hero-unit
 			button.btn.btn-primary.btn-block(type='button', ng-click="test()") 測試紅利點數
 			button.btn.btn-danger.btn-block(type='button', ng-click="add_mailChimp_sub()") 測試 add mailchimp
 	.row(infinite-scroll="orders.nextPage()", infinite-scroll-disabled="orders.busy", infinite-scroll-distance='0')
-		table.table.table-hover.table-bordered
+		table.table.table-bordered
 			tr
 				th 筆數
 				th 訂單編號
@@ -43,7 +43,7 @@ header#banner.hero-unit
 				th 成立日期
 			tr(ng-repeat="order in orders.items | filter: search")
 				td {{$index}}
-				td {{order.order_id}}
+				td(ng-class="order.order_status_id === 34 ? '' : 'red'") {{order.order_id}}
 				td {{order.invoice_prefix}}
 				td {{order.invoice_no}}
 				td {{order.customer_id}}

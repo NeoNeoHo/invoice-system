@@ -17,7 +17,7 @@ var utf8 = require('utf8');
 winston.add(winston.transports.File, {filename: 'Benson.log'}); 
 
 
-// ###################  Invoice Adding System ######################
+// ###################  Invoice Adding System and Invoice Mailing System ######################
 var j = schedule.scheduleJob({hour: 8, minute: 0}, function(){
 	var date = new Date();
 	var initial_date = '2016-06-14';
@@ -110,22 +110,3 @@ var syncCustomer2MailChimp = schedule.scheduleJob(customer_update_rule, function
 // 		});
 // 	});
 // });
-
-
-// ###################  Reward Adding System Initialation ######################
-
-// var date = new Date();
-// var yesterday = date.setDate(date.getDate() - 1);
-// invoice.AutoCreateInvoiceNo(yesterday)
-// winston.info({message: 'Update Invoice!  ' + date});
-// var now = moment();
-// var today = moment().format('YYYY-MM-DD');
-// var yesterday = now.subtract(1, 'days').format('YYYY-MM-DD');
-// var _7_DaysBefore = now.subtract(7, 'days').format('YYYY-MM-DD');
-// var _15_DaysBefore = now.subtract(15, 'days').format('YYYY-MM-DD');
-// rewards.addRewardsWithStatusAndDate(40, yesterday).then(function(result) {winston.info({message: result})}); // check yesterday, for ATM shipped
-// rewards.addRewardsWithStatusAndDate(20, yesterday).then(function(result) {winston.info({message: result})}); // check yesterday, for Credit Card shipped
-// rewards.addRewardsWithStatusAndDate(32, _7_DaysBefore).then(function(result) {winston.info({message: result})}); // check 7 days before, for 貨到付款 shipped
-// rewards.addRewardsWithStatusAndDate(28, _15_DaysBefore).then(function(result) {winston.info({message: result})}); // check 15 days before, for 超商付款 shipped
-// rewards.removeRewardsWithStatusAndDate(46, today).then(function(result) {winston.info({message: result})});  // check everyday, for 宅配未取，取消他的紅利點數
-// rewards.removeRewardsWithStatusAndDate(45, today).then(function(result) {winston.info({message: result})});  // check everyday, for 宅配未取，取消他的紅利點數

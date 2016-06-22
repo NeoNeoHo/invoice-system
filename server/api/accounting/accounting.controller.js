@@ -12,27 +12,18 @@ var EZSHIP_DIR = upload_config.accounting.ezship_dir;
 var EZCAT_DIR = upload_config.accounting.ezcat_dir;
 
 var EZSHIP_COMPLETE_ORDER_STATUS_ID = 34;
-
-// Get List of Orders
-exports.index = function(req, res) {
-	var order_id = req.params.order_id ? req.params.order_id : 9999999;
-	mysql_pool.getConnection(function(err, connection){
-		connection.query('select a.*, b.name as order_status_name from oc_order a, oc_order_status b where a.order_id < ? and a.order_status_id = b.order_status_id and b.language_id = 2 order by a.order_id desc limit 30;', [order_id], function(err, rows) {
-			if(err) {
-				return handleError(res, err);
-			}
-			connection.release();
-			return res.status(200).json(rows);
-		});
-	});
-};
+var EZSHIP_SHIPPING_ORDER_STATUS_ID = 28;
 
 exports.checkEzship = function(req, res) {
 	var file_name = req.params.file_name;
 	var balanced_document = req.params.balanced_document;
 	var file_contents = fs.readFileSync(EZSHIP_DIR + file_name);
 	var summary = {
-		issued_records: []
+		issued_records: [],
+		double_counted_anomaly_records: [],
+		double_counted_normal_records: [],
+		initial_status_anomaly_records: [],
+		credit_card_records: []
 	};
 
 	// ############  Read Ezship File and Parse the Content ###################
@@ -52,6 +43,9 @@ exports.checkEzship = function(req, res) {
 
 		// ############  Kick out Credit Card Orders ###################
 		records = _.reject(records, function(lrecord) {
+			if(lrecord['服務類別'].includes('取貨不付款')) {
+				summary.credit_card_records.push({ezship_id: lrecord['配送編號'], order_id: lrecord.order_id});
+			}
 			return lrecord['服務類別'].includes('取貨不付款');
 		})
 
@@ -60,9 +54,22 @@ exports.checkEzship = function(req, res) {
 
 		Order.getOrders(order_list).then(function(orders) {
 
-			// ############  Kick out Whose Status Are Already Being 'COMPLETED' ###################
+			// ############  Kick out Whose Status Is Already Being 'COMPLETED' ###################
 			orders = _.reject(orders, function(lorder) {
+				if(lorder.order_status_id == EZSHIP_COMPLETE_ORDER_STATUS_ID && lorder.balanced_document !== balanced_document) {
+					summary.double_counted_anomaly_records.push({order_id: lorder.order_id, action: '檢查此單第一次關帳日期，追查！', balanced_document: lorder.balanced_document, total: lorder.total, balanced: -lorder.total});
+				} else if(lorder.order_status_id == EZSHIP_COMPLETE_ORDER_STATUS_ID && lorder.balanced_document === balanced_document) {
+					summary.double_counted_normal_records.push({order_id: lorder.order_id, balanced_document: lorder.balanced_document});
+				}
 				return lorder.order_status_id == EZSHIP_COMPLETE_ORDER_STATUS_ID;
+			});
+
+			// ############  Kick out Whose Initial Status Is Not EZSHIP_SHIP ###################
+			orders = _.reject(orders, function(lorder) {
+				if(lorder.order_status_id !== EZSHIP_SHIPPING_ORDER_STATUS_ID) {
+					summary.initial_status_anomaly_records.push({order_id: lorder.order_id, action: '確認是否有出貨記錄！', balanced_document: lorder.balanced_document, total: lorder.total, balanced: -lorder.total});
+				}
+				return lorder.order_status_id !== EZSHIP_SHIPPING_ORDER_STATUS_ID;
 			});
 
 			// ############  Compare Our Order's Total Price With the Coresponding Record's Total Price ###################
@@ -84,6 +91,10 @@ exports.checkEzship = function(req, res) {
 				return lsum;
 			}, 0);
 			summary['accounts_receivable_shortage'] = _.reduce(summary['issued_records'], function(lsum, lrecord) {
+				lsum += lrecord.balanced;
+				return lsum;
+			}, 0);
+			summary['accounts_receivable_double_counted_anomaly'] = _.reduce(summary['double_counted_anomaly_records'], function(lsum, lrecord) {
 				lsum += lrecord.balanced;
 				return lsum;
 			}, 0);
@@ -120,14 +131,17 @@ exports.checkEzship = function(req, res) {
 	});
 };
 
-exports.checkEzcat = function(req, res) {
-	var file = req.files;
-	var file_path = file.file.path;
-	return res.status(200).send(file_path);
+var checkEzcat = function(date) {
+	date;
 };
 
+var checkCreditCard = function(data) {
 
+};
 
 function handleError(res, err) {
 	return res.status(500).send(err);
 }
+
+exports.checkEzcat = checkEzcat;
+exports.checkCreditCard = checkCreditCard;
