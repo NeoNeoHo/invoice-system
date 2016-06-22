@@ -44,5 +44,6 @@
   },
   "_source": "git://github.com/angular-ui/bower-ui-grid.git",
   "_target": "~3.0.7",
-  "_originalSource": "angular-ui-grid"
+  "_originalSource": "angular-ui-grid",
+  "_direct": true
 }

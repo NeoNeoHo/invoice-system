@@ -57,7 +57,7 @@ var autoAddRewardCrontab = schedule.scheduleJob({hour: 23, minute: 0}, function(
 // });
 
 
-###################  DB Customer to MailChimp Integration ######################
+// ###################  DB Customer to MailChimp Integration ######################
 var customer_update_rule = new schedule.RecurrenceRule();
 customer_update_rule.minute = new schedule.Range(0, 59, 1);
 var syncCustomer2MailChimp = schedule.scheduleJob(customer_update_rule, function() {
