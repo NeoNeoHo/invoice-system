@@ -13,7 +13,7 @@ var EZCAT_DIR = upload_config.accounting.ezcat_dir;
 
 var EZSHIP_COMPLETE_ORDER_STATUS_ID = 34;
 
-// Get list of orders
+// Get List of Orders
 exports.index = function(req, res) {
 	var order_id = req.params.order_id ? req.params.order_id : 9999999;
 	mysql_pool.getConnection(function(err, connection){
@@ -34,6 +34,8 @@ exports.checkEzship = function(req, res) {
 	var summary = {
 		issued_records: []
 	};
+
+	// ############  Read Ezship File and Parse the Content ###################
 	parse(file_contents, {columns: true}, function(err, records) {
 		if(err) {
 			return res.status(500).send(err);
@@ -48,20 +50,22 @@ exports.checkEzship = function(req, res) {
 			return lrecord;
 		})
 
-		// ############  Kick out credit card orders ###################
+		// ############  Kick out Credit Card Orders ###################
 		records = _.reject(records, function(lrecord) {
 			return lrecord['服務類別'].includes('取貨不付款');
 		})
 
+		// ############  Pluck the Order_Id from Records ###################
 		var order_list = _.pluck(records, 'order_id');
 
 		Order.getOrders(order_list).then(function(orders) {
 
-			// ############  Kick out whose status are already being 'COMPLETED' ###################
+			// ############  Kick out Whose Status Are Already Being 'COMPLETED' ###################
 			orders = _.reject(orders, function(lorder) {
 				return lorder.order_status_id == EZSHIP_COMPLETE_ORDER_STATUS_ID;
 			});
 
+			// ############  Compare Our Order's Total Price With the Coresponding Record's Total Price ###################
 			var compared_result = _.reduce(records, function(compared_result, lrecord) {
 				var lorder = _.find(orders, {'order_id': lrecord.order_id});
 				if(lorder) {
@@ -70,7 +74,10 @@ exports.checkEzship = function(req, res) {
 				}
 				return compared_result;
 			}, []);
+
+			// ############  If Order vs Record are not Matching, Write the Result to Issued_records ###################
 			summary.issued_records = summary.issued_records.concat(_.filter(compared_result, function(lresult) {return lresult.balanced != 0;}));
+			
 			summary['balanced_records'] = _.filter(compared_result, function(lresult) {return lresult.balanced == 0;});
 			summary['accounts_receivable'] = _.reduce(summary['balanced_records'], function(lsum, lrecord) {
 				lsum += lrecord.total;
@@ -81,7 +88,7 @@ exports.checkEzship = function(req, res) {
 				return lsum;
 			}, 0);
 
-			// Update balanced orders' status to 34
+			// ############  Update Balanced Orders' Status to 34  ################
 			summary.balanced_records = _.map(summary.balanced_records, function(lrecord) {
 				lrecord.order_status_id = 34;
 				lrecord.balanced_document = balanced_document;
@@ -110,7 +117,6 @@ exports.checkEzship = function(req, res) {
 			console.log(err);
 			return res.status(500).send(err);
 		});
-		// return res.status(200).send(records);
 	});
 };
 
