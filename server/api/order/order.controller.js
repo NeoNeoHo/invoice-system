@@ -27,7 +27,7 @@ function getOrders(order_list) {
 	var defer = q.defer();
 	mysql_pool.getConnection(function(err, connection){
 		var sql = 'select * from oc_order where order_id in (' + connection.escape(order_list) + ')';
-		console.log(sql);
+		// console.log(sql);
 		connection.query(sql, function(err, rows) {
 			connection.release();
 			if(err) {
