@@ -11,6 +11,10 @@ angular.module 'goRocketApp'
 			title: 'Accounting'
 			link: '/accounting'
 		}
+		{
+			title: 'Issues'
+			link: '/issues'
+		}
 	]
 	$scope.isCollapsed = true
 	$scope.isLoggedIn = Auth.isLoggedIn

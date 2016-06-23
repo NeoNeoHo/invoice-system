@@ -43,7 +43,7 @@ header#banner.hero-unit
 				th 成立日期
 			tr(ng-repeat="order in orders.items | filter: search")
 				td {{$index}}
-				td(ng-class="order.order_status_id === 34 ? '' : 'red'") {{order.order_id}}
+				td(ng-class="(order.order_status_id === 34 || order.order_status_id === 29 ||order.order_status_id === 21) ? '' : 'red'") {{order.order_id}}
 				td {{order.invoice_prefix}}
 				td {{order.invoice_no}}
 				td {{order.customer_id}}

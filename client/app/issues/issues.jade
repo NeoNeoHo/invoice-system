@@ -1,0 +1,33 @@
+div(ng-include='"components/navbar/navbar.html"')
+.container-fluid
+	div.panel.panel-default
+		.panel-heading 
+			h3 異常筆數(共有 {{issued_orders.length}} 件)，共 {{total_debt}} 元
+		.panel-body
+		table.table.table-hover.table-bordered
+			tr
+				th 筆數
+				th 訂單編號
+					br
+					input(ng-model="search.order_id")
+				th 發票號碼
+					br
+					input(ng-model="search.invoice_no")
+				th 會員
+					br
+					input(ng-model="search.firstname")
+				th 金額
+				th 訂單狀態
+					br
+					input(ng-model="search.order_status_name")
+				th 訂單日期
+				th 記帳日期
+			tr(ng-repeat="order in issued_orders | filter: search")
+				td {{$index+1}}
+				td {{order.order_id}}
+				td {{order.invoice_prefix+order.invoice_no}}
+				td {{order.firstname + ', ' + order.lastname + ' / ' + order.customer_id}}
+				td {{order.total | currency: "$": 0}}
+				td(ng-class="(order.order_status_id === 34 || order.order_status_id === 29 ||order.order_status_id === 21) ? '' : 'red'") {{order.order_status_name}}
+				td {{order.date_added | date: "yy-MM-dd": "+0800"}}
+				td {{order.balanced_document}}

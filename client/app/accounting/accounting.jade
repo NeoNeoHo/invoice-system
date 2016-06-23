@@ -105,6 +105,7 @@ div(ng-include='"components/navbar/navbar.html"')
 					br
 					input(ng-model="search_initial_status_anomaly_records.total")
 				th 短收
+				th 訂單狀態
 				th 斗牛對帳文件
 					br
 					input(ng-model="search_initial_status_anomaly_records.balanced_document")
@@ -114,6 +115,7 @@ div(ng-include='"components/navbar/navbar.html"')
 				td {{record.order_id}}
 				td {{record.total | currency: "$": 0}}
 				td {{record.balanced | currency: "$": 0}}
+				td {{record.order_status_name}}
 				td {{record.balanced_document}}
 				td {{record.action}}
 	div.panel.panel-default(ng-hide="!summary.balanced_records")

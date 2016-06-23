@@ -11,14 +11,37 @@ var moment = require('moment');
 var winston = require('winston');
 var mailchimp = require('../api/thing/thing.controller.js');
 var sendgrid = require('../api/sendgrid/sendgrid.controller.js');
+var accounting = require('../api/accounting/accounting.controller.js');
 var utf8 = require('utf8');
 
 
 winston.add(winston.transports.File, {filename: 'Benson.log'}); 
 
+// ###################  Accounting for Ezcat and Credit Card  ########################
+// ####  ToDo: This section should be automatized 
+// ####		   by linking ezcat's and credit card company's system
+// ####################################################################################
+var accountingCrontab = schedule.scheduleJob({hour: 9, minute: 0}, function(){
+	var lnow = moment();
+	var ltoday = moment().format('YYYY-MM-DD');
+	var lyesterday = lnow.subtract(1, 'days').format('YYYY-MM-DD');
+	var l_2_DaysBefore = lnow.subtract(1, 'days').format('YYYY-MM-DD');
+	accounting.checkCreditCard(lyesterday);
+	accounting.checkEzcat(l_2_DaysBefore);
+});
+var now = moment();
+var today = moment().format('YYYY-MM-DD');
+var yesterday = now.subtract(1, 'days').format('YYYY-MM-DD');
+var _2_DaysBefore = now.subtract(1, 'days').format('YYYY-MM-DD');
+accounting.checkCreditCard(yesterday).then(function(data) {}, function(err) {console.log(err)});
+accounting.checkEzcat(_2_DaysBefore).then(function(data) {}, function(err) {console.log(err)});
+
 
 // ###################  Invoice Adding System and Invoice Mailing System ######################
-var j = schedule.scheduleJob({hour: 8, minute: 0}, function(){
+// ####
+// ####
+// ############################################################################################
+var j = schedule.scheduleJob({hour: 9, minute: 15}, function(){
 	var date = new Date();
 	var initial_date = '2016-06-14';
 	invoice.AutoCreateInvoiceNo(initial_date);
@@ -28,23 +51,28 @@ var j = schedule.scheduleJob({hour: 8, minute: 0}, function(){
 var initial_date = '2016-06-14';
 invoice.AutoCreateInvoiceNo(initial_date);
 
+
 // ###################  Rewards Adding System ######################
-var autoAddRewardCrontab = schedule.scheduleJob({hour: 23, minute: 0}, function(){
+// ####
+// ####
+// #################################################################
+var autoAddRewardCrontab = schedule.scheduleJob({hour: 10, minute: 0}, function(){
 	var now = moment();
 	var today = moment().format('YYYY-MM-DD');
-	var yesterday = now.subtract(1, 'days').format('YYYY-MM-DD');
-	var _7_DaysBefore = now.subtract(6, 'days').format('YYYY-MM-DD');
-	var _15_DaysBefore = now.subtract(7, 'days').format('YYYY-MM-DD');
 
-
-	rewards.addRewardsWithStatusAndDate(21, today).then(function(result) {winston.info({message: result})});
-	rewards.addRewardsWithStatusAndDate(29, today).then(function(result) {winston.info({message: result})});	
-	rewards.addRewardsWithStatusAndDate(34, today).then(function(result) {winston.info({message: result})});
+	rewards.addRewardsWithStatusAndDate(21, today).then(function(result) {winston.info({message: result})});    // 完成交易，貨到付款
+	rewards.addRewardsWithStatusAndDate(29, today).then(function(result) {winston.info({message: result})});	// 完成交易，信用卡
+	rewards.addRewardsWithStatusAndDate(34, today).then(function(result) {winston.info({message: result})});	// 完成交易，超商付款
 
 	rewards.removeRewardsWithStatusAndDate(46, today).then(function(result) {winston.info({message: result})});  // check everyday, for 宅配未取，取消他的紅利點數
 	rewards.removeRewardsWithStatusAndDate(45, today).then(function(result) {winston.info({message: result})});  // check everyday, for 宅配未取，取消他的紅利點數
 });
 
+
+// ###################  Example of How to Send SendGrid ######################
+// ####
+// ####
+// ###########################################################################
 // sendgrid.getOrdersPersonalizations([33024, 33019, 32998]).then(function(personalizations_coll) {
 // 	console.log(personalizations_coll);
 // 	sendgrid.sendInvoiceMail(personalizations_coll).then(function(resp) {
@@ -58,6 +86,9 @@ var autoAddRewardCrontab = schedule.scheduleJob({hour: 23, minute: 0}, function(
 
 
 // ###################  DB Customer to MailChimp Integration ######################
+// ####
+// ####
+// ################################################################################
 var customer_update_rule = new schedule.RecurrenceRule();
 customer_update_rule.minute = new schedule.Range(0, 59, 1);
 var syncCustomer2MailChimp = schedule.scheduleJob(customer_update_rule, function() {
@@ -74,7 +105,6 @@ var syncCustomer2MailChimp = schedule.scheduleJob(customer_update_rule, function
 			mailchimp.addMCListSubscribers(api_config.mailChimp_lists_ids['customer_list'], ldata)
 			.then(function(data) {
 				console.log(moment().format('YYYY-MM-DD hh:mm') + ' customer list sync to mailchimp');
-				// console.log(data);
 			});
 		}
 	);
@@ -82,7 +112,9 @@ var syncCustomer2MailChimp = schedule.scheduleJob(customer_update_rule, function
 
 
 // ###################  Google Sheet to MailChimp Integration ######################
-
+// ####
+// ####
+// #################################################################################
 // var rule = new schedule.RecurrenceRule();
 // rule.minute = new schedule.Range(0, 59, 1);
 

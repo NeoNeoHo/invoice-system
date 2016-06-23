@@ -56,9 +56,9 @@ exports.sendInvoiceMail = function(personalizations_coll) {
 	var defer = q.defer();
 	var request = sendgrid_engine.emptyRequest();
 
-	// request.method = 'POST';
-	// request.path = '/v3/mail/send';
-	// request.body = sendgrid_template.invoice_template(personalizations_coll);
+	request.method = 'POST';
+	request.path = '/v3/mail/send';
+	request.body = sendgrid_template.invoice_template(personalizations_coll);
 
 	sendgrid_engine.API(request, function (response) {
 		console.log(response.statusCode);

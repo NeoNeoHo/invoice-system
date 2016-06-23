@@ -4,6 +4,7 @@ var _ = require('lodash');
 var Accounting = require('./accounting.model');
 var db_config = require('../../config/db_config.js');
 var mysql_pool = db_config.mysql_pool;
+var q = require('q');
 var fs = require('fs');
 var parse = require('csv-parse');
 var upload_config = require('../../config/upload_config.js');
@@ -11,8 +12,13 @@ var Order = require('../../api/order/order.controller.js');
 var EZSHIP_DIR = upload_config.accounting.ezship_dir;
 var EZCAT_DIR = upload_config.accounting.ezcat_dir;
 
-var EZSHIP_COMPLETE_ORDER_STATUS_ID = 34;
+
 var EZSHIP_SHIPPING_ORDER_STATUS_ID = 28;
+var EZSHIP_COMPLETE_ORDER_STATUS_ID = 34;
+var CREDIT_CARD_SHIPPING_ORDER_STATUS_ID = 20;
+var CREDIT_CARD_COMPLETE_ORDER_STATUS_ID = 29;
+var EZCAT_SHIPPING_ORDER_STATUS_ID = 32;
+var EZCAT_COMPLETE_ORDER_STATUS_ID = 21;
 
 exports.checkEzship = function(req, res) {
 	var file_name = req.params.file_name;
@@ -67,7 +73,7 @@ exports.checkEzship = function(req, res) {
 			// ############  Kick out Whose Initial Status Is Not EZSHIP_SHIP ###################
 			orders = _.reject(orders, function(lorder) {
 				if(lorder.order_status_id !== EZSHIP_SHIPPING_ORDER_STATUS_ID) {
-					summary.initial_status_anomaly_records.push({order_id: lorder.order_id, action: '確認是否有出貨記錄！', balanced_document: lorder.balanced_document, total: lorder.total, balanced: -lorder.total});
+					summary.initial_status_anomaly_records.push({order_id: lorder.order_id, action: '確認是否有出貨記錄！', balanced_document: lorder.balanced_document, total: lorder.total, balanced: -lorder.total, order_status_name: lorder.order_status_name});
 				}
 				return lorder.order_status_id !== EZSHIP_SHIPPING_ORDER_STATUS_ID;
 			});
@@ -101,14 +107,16 @@ exports.checkEzship = function(req, res) {
 
 			// ############  Update Balanced Orders' Status to 34  ################
 			summary.balanced_records = _.map(summary.balanced_records, function(lrecord) {
-				lrecord.order_status_id = 34;
+				lrecord.order_status_id = EZSHIP_COMPLETE_ORDER_STATUS_ID;
 				lrecord.balanced_document = balanced_document;
 				lrecord.date_modified = new Date();
+				lrecord.date_added = new Date();
+				lrecord.comment = '';
 				return lrecord;
 			});
 			var sqls = Order.updateBulkSql('oc_order', _.map(summary.balanced_records, _.partialRight(_.pick, ['order_status_id', 'balanced_document', 'date_modified'])), _.map(summary.balanced_records, _.partialRight(_.pick, ['order_id'])));
-
 			if(sqls.length > 0) {
+				sqls = sqls + '; ' + Order.insertBulkSql('oc_order_history', _.map(summary.balanced_records, _.partialRight(_.pick, ['order_id', 'order_status_id', 'date_added', 'comment'])));
 				mysql_pool.getConnection(function(err, connection){
 					connection.query(sqls,  function(err, rows) {	
 						if (err) {
@@ -131,12 +139,74 @@ exports.checkEzship = function(req, res) {
 	});
 };
 
-var checkEzcat = function(date) {
-	date;
+var checkCreditCard = function(date) {
+	var defer = q.defer();
+	Order.getOrdersByDate(date).then(function(orders) {
+		orders = _.reject(orders, function(lorder) {
+			return lorder.order_status_id !== CREDIT_CARD_SHIPPING_ORDER_STATUS_ID;
+		});
+		orders = _.map(orders, function(lorder) {
+			lorder.order_status_id = CREDIT_CARD_COMPLETE_ORDER_STATUS_ID;
+			lorder.balanced_document = date;
+			lorder.date_modified = new Date();
+			lorder.date_added = new Date();
+			lorder.comment = '';
+			return lorder;
+		});
+		var sqls = Order.updateBulkSql('oc_order', _.map(orders, _.partialRight(_.pick, ['order_status_id', 'balanced_document', 'date_modified'])), _.map(orders, _.partialRight(_.pick, ['order_id'])));
+		if(sqls.length > 0) {
+			sqls = sqls + '; ' + Order.insertBulkSql('oc_order_history', _.map(orders, _.partialRight(_.pick, ['order_id', 'order_status_id', 'date_added', 'comment'])));
+			mysql_pool.getConnection(function(err, connection){
+				connection.query(sqls,  function(err, rows) {	
+					connection.release();
+					if (err) {
+						defer.reject(err);
+					}
+					defer.resolve(rows);
+				});
+			});
+		} else {
+			defer.resolve(sqls);
+		}
+	}, function(err) {
+		defer.reject(err);
+	});
+	return defer.promise;
 };
 
-var checkCreditCard = function(data) {
-
+var checkEzcat = function(date) {
+	var defer = q.defer();
+	Order.getOrdersByDate(date).then(function(orders) {
+		orders = _.reject(orders, function(lorder) {
+			return lorder.order_status_id !== EZCAT_SHIPPING_ORDER_STATUS_ID;
+		});
+		orders = _.map(orders, function(lorder) {
+			lorder.order_status_id = EZCAT_COMPLETE_ORDER_STATUS_ID;
+			lorder.balanced_document = date;
+			lorder.date_modified = new Date();
+			lorder.date_added = new Date();
+			lorder.comment = '';
+			return lorder;
+		});
+		var sqls = Order.updateBulkSql('oc_order', _.map(orders, _.partialRight(_.pick, ['order_status_id', 'balanced_document', 'date_modified'])), _.map(orders, _.partialRight(_.pick, ['order_id'])));
+		if(sqls.length > 0) {
+			sqls = sqls + '; ' + Order.insertBulkSql('oc_order_history', _.map(orders, _.partialRight(_.pick, ['order_id', 'order_status_id', 'date_added', 'comment'])));
+			mysql_pool.getConnection(function(err, connection){
+				connection.query(sqls,  function(err, rows) {	
+					connection.release();
+					if (err) {
+						defer.reject(err);
+					}
+					defer.resolve(rows);
+				});
+			});
+		} else {
+			defer.resolve(sqls);
+		}
+	}, function(err) {
+		defer.reject(err);
+	});
+	return defer.promise;
 };
 
 function handleError(res, err) {

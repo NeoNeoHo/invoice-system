@@ -15,7 +15,7 @@ exports.invoice_template = function(personalizations_coll) {
 		"personalizations": personalizations_coll,
 		"reply_to": {
 			"email": "benson@vecsgardenia.com",
-			"name": "Benson at 嘉丹妮爾"
+			"name": "嘉丹妮爾的Benson"
 		},
 		"subject": "Hello, World!",
 		"template_id": "71abec21-e89e-4bf1-aca0-79fa509fae4c",
