@@ -74,18 +74,22 @@ var autoAddRewardCrontab = schedule.scheduleJob({hour: 10, minute: 0}, function(
 // ####
 // ####
 // ###########################################################################
-var now = moment().utcOffset(0).subtract(2, 'minutes').format('YYYY-MM-DD hh:mm');
-console.log(now);
-Order.getOopsFailOrders(now).then(function(lorders){
-	sendgrid.getOopsOrderFailsReminderPersonalizations(_.pluck(lorders, 'order_id')).then(function(personalizations_coll) {
-		sendgrid.sendOopsOrderFailsReminderMail(personalizations_coll).then(function(resp) {
-			console.log(resp);
-		}, function(err) {
-			console.log(err)
+var oops_order_fails_reminder_update_rule = new schedule.RecurrenceRule();
+oops_order_fails_reminder_update_rule.minute = new schedule.Range(0, 59, 2);
+var OopsOrderFailsReminderAUTO = schedule.scheduleJob(oops_order_fails_reminder_update_rule, function() {
+	var now = moment().utcOffset(0).subtract(2, 'minutes').format('YYYY-MM-DD hh:mm');
+	console.log(now);
+	Order.getOopsFailOrders(now).then(function(lorders){
+		sendgrid.getOopsOrderFailsReminderPersonalizations(_.pluck(lorders, 'order_id')).then(function(personalizations_coll) {
+			sendgrid.sendOopsOrderFailsReminderMail(personalizations_coll).then(function(resp) {
+				console.log(resp);
+			}, function(err) {
+				console.log(err);
+			});
 		});
+	}, function(err){
+		console.log(err);
 	});
-}, function(err){
-
 });
 // sendgrid.getOrdersPersonalizations([33024, 33019, 32998]).then(function(personalizations_coll) {
 // 	console.log(personalizations_coll);

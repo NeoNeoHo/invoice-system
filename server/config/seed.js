@@ -41,4 +41,14 @@ User.find({}).remove(function() {
 			console.log('finished populating users');
 		}
 	);
+	User.create({
+		provider: 'local',
+		role: 'admin',
+		name: 'christine',
+		email: 'tsai823@gmail.com',
+		password: 'jacey0614'
+	}, function() {
+			console.log('finished populating users');
+		}
+	);
 });

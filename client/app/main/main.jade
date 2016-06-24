@@ -16,9 +16,9 @@ header#banner.hero-unit
 							i.glyphicon.glyphicon-calendar
 
 			button.btn.btn-primary.btn-block(type='button', ng-click="openInvoiceBuildModal()") 產生發票號碼
-			button.btn.btn-primary.btn-block(type='button') 列印統一發票
-			button.btn.btn-primary.btn-block(type='button', ng-click="test()") 測試紅利點數
-			button.btn.btn-danger.btn-block(type='button', ng-click="add_mailChimp_sub()") 測試 add mailchimp
+			button.btn.btn-primary.btn-block(type='button', disabled) 列印統一發票
+			button.btn.btn-primary.btn-block(type='button', ng-click="test()", disabled) 測試紅利點數
+			button.btn.btn-danger.btn-block(type='button', ng-click="add_mailChimp_sub()", disabled) 測試 add mailchimp
 	.row(infinite-scroll="orders.nextPage()", infinite-scroll-disabled="orders.busy", infinite-scroll-distance='0')
 		table.table.table-bordered
 			tr
