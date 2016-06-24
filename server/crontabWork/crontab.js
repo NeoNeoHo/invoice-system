@@ -25,16 +25,16 @@ var accountingCrontab = schedule.scheduleJob({hour: 9, minute: 0}, function(){
 	var lnow = moment();
 	var ltoday = moment().format('YYYY-MM-DD');
 	var lyesterday = lnow.subtract(1, 'days').format('YYYY-MM-DD');
-	var l_2_DaysBefore = lnow.subtract(1, 'days').format('YYYY-MM-DD');
+	var l_7_DaysBefore = lnow.subtract(6, 'days').format('YYYY-MM-DD');
 	accounting.checkCreditCard(lyesterday);
-	accounting.checkEzcat(l_2_DaysBefore);
+	accounting.checkEzcat(l_7_DaysBefore);
 });
 var now = moment();
 var today = moment().format('YYYY-MM-DD');
 var yesterday = now.subtract(1, 'days').format('YYYY-MM-DD');
-var _2_DaysBefore = now.subtract(1, 'days').format('YYYY-MM-DD');
+var _7_DaysBefore = now.subtract(6, 'days').format('YYYY-MM-DD');
 accounting.checkCreditCard(yesterday).then(function(data) {}, function(err) {console.log(err)});
-accounting.checkEzcat(_2_DaysBefore).then(function(data) {}, function(err) {console.log(err)});
+accounting.checkEzcat(_7_DaysBefore).then(function(data) {}, function(err) {console.log(err)});
 
 
 // ###################  Invoice Adding System and Invoice Mailing System ######################
