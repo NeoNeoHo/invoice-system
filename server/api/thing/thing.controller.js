@@ -87,7 +87,7 @@ exports.addMCListSubscribers = function(list_id, subscribers) {
 				})
 		});
 	});
-	console.log(batch_request);
+	// console.log(batch_request);
 	request({
 		url: url,
 		method: 'POST', 

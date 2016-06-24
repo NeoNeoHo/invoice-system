@@ -78,7 +78,7 @@ var oops_order_fails_reminder_update_rule = new schedule.RecurrenceRule();
 oops_order_fails_reminder_update_rule.minute = new schedule.Range(0, 59, 2);
 var OopsOrderFailsReminderAUTO = schedule.scheduleJob(oops_order_fails_reminder_update_rule, function() {
 	var now = moment().utcOffset(0).subtract(2, 'minutes').format('YYYY-MM-DD hh:mm');
-	console.log(now);
+	console.log(now + ': Auto Oops Order Fails Reminder Mail');
 	Order.getOopsFailOrders(now).then(function(lorders){
 		sendgrid.getOopsOrderFailsReminderPersonalizations(_.pluck(lorders, 'order_id')).then(function(personalizations_coll) {
 			sendgrid.sendOopsOrderFailsReminderMail(personalizations_coll).then(function(resp) {
@@ -122,7 +122,7 @@ var syncCustomer2MailChimp = schedule.scheduleJob(customer_update_rule, function
 			}, ldata);
 			mailchimp.addMCListSubscribers(api_config.mailChimp_lists_ids['customer_list'], ldata)
 			.then(function(data) {
-				console.log(moment().format('YYYY-MM-DD hh:mm') + ' customer list sync to mailchimp');
+				console.log(moment().format('YYYY-MM-DD hh:mm') + ' Auto customer list sync to mailchimp');
 			});
 		}
 	);
