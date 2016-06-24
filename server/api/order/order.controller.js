@@ -6,7 +6,6 @@ var q = require('q');
 var mysql = require('mysql');
 var db_config = require('../../config/db_config.js');
 var mysql_pool = db_config.mysql_pool;
-var mysql_connection = db_config.mysql_connection;
 var moment = require('moment');
 
 // Get list of orders
@@ -14,10 +13,10 @@ exports.index = function(req, res) {
 	var order_id = req.params.order_id ? req.params.order_id : 9999999;
 	mysql_pool.getConnection(function(err, connection){
 		connection.query('select a.*, b.name as order_status_name from oc_order a, oc_order_status b where a.order_id < ? and a.order_status_id = b.order_status_id and b.language_id = 2 order by a.order_id desc limit 30;', [order_id], function(err, rows) {
+			connection.release();
 			if(err) {
 				return handleError(res, err);
 			}
-			connection.release();
 			return res.status(200).json(rows);
 		});
 	});
@@ -76,10 +75,10 @@ var updateDictSql = function(table, update_dict, condition_dict) {
 	var where_string = '';
 	_.forEach(_.pairs(update_dict), function(pair) {
 		if(set_string.length == 0) {
-			set_string = pair[0] + ' = ' + mysql_connection.escape(pair[1]);
+			set_string = pair[0] + ' = ' + mysql_pool.escape(pair[1]);
 		}
 		else {
-			set_string = set_string + ', ' + pair[0] + ' = ' + mysql_connection.escape(pair[1]);
+			set_string = set_string + ', ' + pair[0] + ' = ' + mysql_pool.escape(pair[1]);
 		}
 	});
 	_.forEach(_.pairs(condition_dict), function(pair) {
@@ -99,10 +98,10 @@ var insertDictSql = function(table, insert_dict) {
 	var set_string = '';
 	_.forEach(_.pairs(insert_dict), function(pair) {
 		if(set_string.length == 0) {
-			set_string = pair[0] + ' = ' + mysql_connection.escape(pair[1]);
+			set_string = pair[0] + ' = ' + mysql_pool.escape(pair[1]);
 		}
 		else {
-			set_string = set_string + ', ' + pair[0] + ' = ' + mysql_connection.escape(pair[1]);
+			set_string = set_string + ', ' + pair[0] + ' = ' + mysql_pool.escape(pair[1]);
 		}
 	});
 	var sql_string = 'insert into ' + table + ' set ' + set_string;
