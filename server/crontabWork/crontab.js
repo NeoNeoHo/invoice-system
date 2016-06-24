@@ -12,6 +12,7 @@ var winston = require('winston');
 var mailchimp = require('../api/thing/thing.controller.js');
 var sendgrid = require('../api/sendgrid/sendgrid.controller.js');
 var accounting = require('../api/accounting/accounting.controller.js');
+var Order = require('../api/order/order.controller.js');
 var utf8 = require('utf8');
 
 
@@ -73,6 +74,19 @@ var autoAddRewardCrontab = schedule.scheduleJob({hour: 10, minute: 0}, function(
 // ####
 // ####
 // ###########################################################################
+var now = moment().utcOffset(0).subtract(2, 'minutes').format('YYYY-MM-DD hh:mm');
+console.log(now);
+Order.getOopsFailOrders(now).then(function(lorders){
+	sendgrid.getOopsOrderFailsReminderPersonalizations(_.pluck(lorders, 'order_id')).then(function(personalizations_coll) {
+		sendgrid.sendOopsOrderFailsReminderMail(personalizations_coll).then(function(resp) {
+			console.log(resp);
+		}, function(err) {
+			console.log(err)
+		});
+	});
+}, function(err){
+
+});
 // sendgrid.getOrdersPersonalizations([33024, 33019, 32998]).then(function(personalizations_coll) {
 // 	console.log(personalizations_coll);
 // 	sendgrid.sendInvoiceMail(personalizations_coll).then(function(resp) {

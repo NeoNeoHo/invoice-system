@@ -52,6 +52,34 @@ exports.getOrdersPersonalizations = function(order_list) {
 	return defer.promise;
 };
 
+exports.getOopsOrderFailsReminderPersonalizations = function(order_list) {
+	var defer = q.defer();
+	var personalizations_coll = [];
+	Order.getOrders(order_list).then(function(order_coll) {
+		personalizations_coll = _.reduce(order_coll, function(lpersonalization, order_obj) {
+			lpersonalization.push({
+				// "subject": String(subject_title),
+				"substitutions": {
+					"-subject-": 'Hi '+ order_obj.firstname+', '+"購物上遇到問題了嗎？",
+					"-preheader-": '嘉丹妮爾客服小組，為您把關購物的每個環節',
+					"-name-": order_obj.firstname,
+					"-order_id-": String(order_obj.order_id),
+				},
+				"to": [
+					{
+						"email": order_obj.email
+					}
+				]
+			});
+			return lpersonalization;
+		}, []);
+		defer.resolve(personalizations_coll);
+	}, function(err) {
+		defer.reject(err);
+	});
+	return defer.promise;
+};
+
 exports.sendInvoiceMail = function(personalizations_coll) {
 	var defer = q.defer();
 	var request = sendgrid_engine.emptyRequest();
@@ -69,6 +97,22 @@ exports.sendInvoiceMail = function(personalizations_coll) {
 	return defer.promise;
 };
 
+exports.sendOopsOrderFailsReminderMail = function(personalizations_coll) {
+	var defer = q.defer();
+	var request = sendgrid_engine.emptyRequest();
+
+	request.method = 'POST';
+	request.path = '/v3/mail/send';
+	request.body = sendgrid_template.oops_order_fails_reminder(personalizations_coll);
+
+	sendgrid_engine.API(request, function (response) {
+		console.log(response.statusCode);
+		console.log(response.body);
+		console.log(response.headers);
+		defer.resolve(response);
+	});
+	return defer.promise;
+};
 
 function handleError(res, err) {
 	return res.status(500).send(err);

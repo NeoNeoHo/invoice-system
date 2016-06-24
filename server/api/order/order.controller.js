@@ -70,6 +70,22 @@ var getOrdersByDate = function(date) {
 	return defer.promise;
 };
 
+var getOopsFailOrders = function(date_with_mins) {
+	var defer = q.defer();
+	var date = moment(date_with_mins).format('YYYY-MM-DD hh:mm');
+	mysql_pool.getConnection(function(err, connection){
+		var sql = 'select * from oc_order where date_added >= ' + connection.escape(date) + ' and order_status_id = 10 order by order_id asc;';
+		connection.query(sql, function(err, rows){
+			connection.release();
+			if (err) {
+				defer.reject(err);
+			}
+			defer.resolve(rows);
+		});
+	});
+	return defer.promise;	
+};
+
 var updateDictSql = function(table, update_dict, condition_dict) {
 	var set_string = '';
 	var where_string = '';
@@ -140,6 +156,7 @@ function handleError(res, err) {
 
 exports.getOrders = getOrders;
 exports.getOrdersByDate = getOrdersByDate;
+exports.getOopsFailOrders = getOopsFailOrders;
 exports.updateDictSql = updateDictSql;
 exports.updateBulkSql = updateBulkSql;
 exports.insertBulkSql = insertBulkSql;

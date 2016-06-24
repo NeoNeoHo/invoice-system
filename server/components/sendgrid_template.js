@@ -45,4 +45,45 @@ exports.invoice_template = function(personalizations_coll) {
 			// }
 		}
 	};
+};
+
+exports.oops_order_fails_reminder_template = function(personalizations_coll) {
+	return {
+		"content": [
+		{
+			"type": "text/html",
+			"value": " "
+		}
+		],
+		"from": {
+			"email": "benson@vecsgardenia.com",
+			"name": "嘉丹妮爾的訂單小提醒"
+		},
+		"personalizations": personalizations_coll,
+		"reply_to": {
+			"email": "benson@vecsgardenia.com",
+			"name": "嘉丹妮爾的Benson"
+		},
+		"subject": "Hello, World!",
+		"template_id": "c4c609dc-2744-4689-9bed-03061457e117",
+		// "send_at": Math.round(new Date().getTime()/1000),
+		"tracking_settings": {
+			"click_tracking": {
+				"enable": true,
+				"enable_text": true
+			},
+			"ganalytics": {
+				"enable": true,
+				"utm_campaign": "sendgrid",
+				"utm_content": "sendgrid",
+				"utm_medium": "email",
+				"utm_name": "order_oops",
+				"utm_term": ""
+			},
+			"open_tracking": {
+				"enable": true,
+				"substitution_tag": "%opentrack"
+			}
+		}
+	};
 }
