@@ -5,7 +5,6 @@ var q = require('q');
 var Invoice = require('./customer.model');
 var mysql = require('mysql');
 var db_config = require('../../config/db_config.js');
-var mysql_connection = db_config.mysql_connection;
 var mysql_pool = db_config.mysql_pool;
 
 
@@ -16,9 +15,9 @@ function getCustomerByDate(date) {
 	console.log(sql);
 	mysql_pool.getConnection(function(err, connection){
 		connection.query(sql, function(err, rows) {
+			connection.release();
 			if (err) { defer.reject(err); }
 			if(!rows) { defer.reject('Not Found') }
-			connection.release();
 			defer.resolve(rows);
 		});
 	});
@@ -36,10 +35,10 @@ function updateDictSql(table, update_dict, condition_dict) {
 	var where_string = '';
 	_.forEach(_.pairs(update_dict), function(pair) {
 		if(set_string.length == 0) {
-			set_string = pair[0] + ' = ' + mysql_connection.escape(pair[1]);
+			set_string = pair[0] + ' = ' + mysql_pool.escape(pair[1]);
 		}
 		else {
-			set_string = set_string + ', ' + pair[0] + ' = ' + mysql_connection.escape(pair[1]);
+			set_string = set_string + ', ' + pair[0] + ' = ' + mysql_pool.escape(pair[1]);
 		}
 	});
 	_.forEach(_.pairs(condition_dict), function(pair) {

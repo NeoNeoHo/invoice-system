@@ -7,7 +7,6 @@ var mysql = require('mysql');
 var db_config = require('../../config/db_config.js');
 var Order = require('../../api/order/order.controller.js');
 var Sendgrid = require('../../api/sendgrid/sendgrid.controller.js');
-var mysql_connection = db_config.mysql_connection;
 var mysql_pool = db_config.mysql_pool;
 var js2xmlparser = require('js2xmlparser');
 
@@ -37,7 +36,7 @@ exports.show = function(req, res) {
 
 function getNoInvoiceOrders(initial_date) {
 	var defer = q.defer();
-	var sql_string = 'select order_id, order_status_id from oc_order where invoice_no = 0 and order_status_id in (21, 29, 34) and date_added >= '+mysql_connection.escape(initial_date)+' order by order_id asc;';
+	var sql_string = 'select order_id, order_status_id from oc_order where invoice_no = 0 and order_status_id in (21, 29, 34) and date_added >= '+mysql_pool.escape(initial_date)+' order by order_id asc;';
 	mysql_pool.getConnection(function(err, connection){
 		connection.query(sql_string, function(err, rows){
 			if (err) {
@@ -299,7 +298,7 @@ exports.AutoCreateInvoiceNo = function(initial_date) {
 
 function getOrderById(order_id) {
 	var defer = q.defer();
-	var sql = 'select * from oc_order where order_id in ' + mysql_connection.escape([order_id]);
+	var sql = 'select * from oc_order where order_id in ' + mysql_pool.escape([order_id]);
 	mysql_pool.getConnection(function(err, connection){
 		connection.query(sql, function(err, rows) {
 			if (err) { defer.reject(err); }
@@ -313,7 +312,7 @@ function getOrderById(order_id) {
 
 function getOrderTotalById(order_id) {
 	var defer = q.defer();
-	var sql = 'select * from oc_order_total where order_id in ' + mysql_connection.escape([order_id]);
+	var sql = 'select * from oc_order_total where order_id in ' + mysql_pool.escape([order_id]);
 	mysql_pool.getConnection(function(err, connection){
 		connection.query(sql, function(err, rows) {
 			if (err) { defer.reject(err); }
@@ -368,10 +367,10 @@ function updateDictSql(table, update_dict, condition_dict) {
 	var where_string = '';
 	_.forEach(_.pairs(update_dict), function(pair) {
 		if(set_string.length == 0) {
-			set_string = pair[0] + ' = ' + mysql_connection.escape(pair[1]);
+			set_string = pair[0] + ' = ' + mysql_pool.escape(pair[1]);
 		}
 		else {
-			set_string = set_string + ', ' + pair[0] + ' = ' + mysql_connection.escape(pair[1]);
+			set_string = set_string + ', ' + pair[0] + ' = ' + mysql_pool.escape(pair[1]);
 		}
 	});
 	_.forEach(_.pairs(condition_dict), function(pair) {

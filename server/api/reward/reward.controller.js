@@ -5,7 +5,6 @@ var Order = require('./reward.model');
 var mysql = require('mysql');
 var q = require('q');
 var db_config = require('../../config/db_config.js');
-var mysql_connection = db_config.mysql_connection;
 var mysql_pool = db_config.mysql_pool;
 var moment = require('moment');
 
@@ -149,7 +148,7 @@ function getOrdersWithStatusAndDate(order_status, date) {
 	var defer = q.defer();
 	var day = moment(date);
 	var expire_date = day.subtract(10, 'days').format('YYYY-MM-DD');
-	var sql_string = 'select order_id, customer_id from oc_order where order_status_id =' +mysql_connection.escape(order_status) +' and date_format(date_modified, "%Y-%m-%d") <= ' + mysql_connection.escape(date) + ' and date_format(date_modified, "%Y-%m-%d") >= ' + mysql_connection.escape(expire_date) + ' order by order_id asc;';
+	var sql_string = 'select order_id, customer_id from oc_order where order_status_id =' +mysql_pool.escape(order_status) +' and date_format(date_modified, "%Y-%m-%d") <= ' + mysql_pool.escape(date) + ' and date_format(date_modified, "%Y-%m-%d") >= ' + mysql_pool.escape(expire_date) + ' order by order_id asc;';
 	mysql_pool.getConnection(function(err, connection){
 		connection.query(sql_string, function(err, rows){
 			if (err) {
@@ -239,7 +238,7 @@ function removeRewardIfAdd(order_info) {
 
 function getRewardByOrderId(order_id) {
 	var defer = q.defer();
-	var sql_string = 'select * from oc_customer_reward where order_id =' +mysql_connection.escape(order_id) +';';
+	var sql_string = 'select * from oc_customer_reward where order_id =' +mysql_pool.escape(order_id) +';';
 	mysql_pool.getConnection(function(err, connection){
 		connection.query(sql_string, function(err, rows){
 			if (err) {
@@ -254,7 +253,7 @@ function getRewardByOrderId(order_id) {
 
 function getOrderReward(order_id) {
 	var defer = q.defer();
-	var sql_string = 'select sum(reward) as points from oc_order_product where order_id =' +mysql_connection.escape(order_id) +';';
+	var sql_string = 'select sum(reward) as points from oc_order_product where order_id =' +mysql_pool.escape(order_id) +';';
 	mysql_pool.getConnection(function(err, connection){
 		connection.query(sql_string, function(err, rows){
 			if (err) {
@@ -285,10 +284,10 @@ function insertBulkDictSql(table, insert_dict) {
 	var set_string = '';
 	_.forEach(_.pairs(insert_dict), function(pair) {
 		if(set_string.length == 0) {
-			set_string = pair[0] + ' = ' + mysql_connection.escape(pair[1]);
+			set_string = pair[0] + ' = ' + mysql_pool.escape(pair[1]);
 		}
 		else {
-			set_string = set_string + ', ' + pair[0] + ' = ' + mysql_connection.escape(pair[1]);
+			set_string = set_string + ', ' + pair[0] + ' = ' + mysql_pool.escape(pair[1]);
 		}
 	});
 	var sql_string = 'insert into ' + table + ' set ' + set_string;
