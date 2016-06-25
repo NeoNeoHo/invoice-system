@@ -81,6 +81,7 @@ var OopsOrderFailsReminderAUTO = schedule.scheduleJob(oops_order_fails_reminder_
 	console.log(now + ': Auto Oops Order Fails Reminder Mail');
 	Order.getOopsFailOrders(now).then(function(lorders){
 		sendgrid.getOopsOrderFailsReminderPersonalizations(_.pluck(lorders, 'order_id')).then(function(personalizations_coll) {
+			console.log(personalizations_coll);
 			sendgrid.sendOopsOrderFailsReminderMail(personalizations_coll).then(function(resp) {
 				console.log(resp);
 			}, function(err) {
@@ -91,6 +92,7 @@ var OopsOrderFailsReminderAUTO = schedule.scheduleJob(oops_order_fails_reminder_
 		console.log(err);
 	});
 });
+
 // sendgrid.getOrdersPersonalizations([33024, 33019, 32998]).then(function(personalizations_coll) {
 // 	console.log(personalizations_coll);
 // 	sendgrid.sendInvoiceMail(personalizations_coll).then(function(resp) {

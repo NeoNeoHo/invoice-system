@@ -103,7 +103,7 @@ exports.sendOopsOrderFailsReminderMail = function(personalizations_coll) {
 
 	request.method = 'POST';
 	request.path = '/v3/mail/send';
-	request.body = sendgrid_template.oops_order_fails_reminder(personalizations_coll);
+	request.body = sendgrid_template.oops_order_fails_reminder_template(personalizations_coll);
 
 	sendgrid_engine.API(request, function (response) {
 		console.log(response.statusCode);
