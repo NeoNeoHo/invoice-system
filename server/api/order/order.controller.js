@@ -70,11 +70,11 @@ var getOrdersByDate = function(date) {
 	return defer.promise;
 };
 
-var getOopsFailOrders = function(date_with_mins) {
+var getOopsFailOrders = function(delayed_seconds, duration_seconds, order_status_id) {
 	var defer = q.defer();
-	var date = moment(date_with_mins).format('YYYY-MM-DD hh:mm');
 	mysql_pool.getConnection(function(err, connection){
-		var sql = 'select * from oc_order where date_added >= ' + connection.escape(date) + ' and order_status_id = 10 order by order_id asc;';
+		var sql = 'SELECT * FROM oc_order WHERE date_added BETWEEN NOW() - INTERVAL ' + connection.escape(delayed_seconds + duration_seconds) + ' SECOND AND NOW() - INTERVAL ' + connection.escape(delayed_seconds)  + ' SECOND and order_status_id ='+ connection.escape(order_status_id) +' order by order_id asc;';
+		console.log(sql);
 		connection.query(sql, function(err, rows){
 			connection.release();
 			if (err) {

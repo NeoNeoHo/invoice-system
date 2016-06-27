@@ -15,7 +15,7 @@ exports.invoice_template = function(personalizations_coll) {
 		"personalizations": personalizations_coll,
 		"reply_to": {
 			"email": "benson@vecsgardenia.com",
-			"name": "嘉丹妮爾的Benson"
+			"name": "嘉丹妮爾客服小組"
 		},
 		"subject": "Hello, World!",
 		"template_id": "71abec21-e89e-4bf1-aca0-79fa509fae4c",
@@ -62,7 +62,7 @@ exports.oops_order_fails_reminder_template = function(personalizations_coll) {
 		"personalizations": personalizations_coll,
 		"reply_to": {
 			"email": "benson@vecsgardenia.com",
-			"name": "嘉丹妮爾的Benson"
+			"name": "嘉丹妮爾客服小組"
 		},
 		"subject": "Hello, World!",
 		"template_id": "c4c609dc-2744-4689-9bed-03061457e117",

@@ -52,7 +52,7 @@ exports.getOrdersPersonalizations = function(order_list) {
 	return defer.promise;
 };
 
-exports.getOopsOrderFailsReminderPersonalizations = function(order_list) {
+exports.getOopsPersonalizations = function(order_list) {
 	var defer = q.defer();
 	var personalizations_coll = [];
 	Order.getOrders(order_list).then(function(order_coll) {
@@ -69,6 +69,11 @@ exports.getOopsOrderFailsReminderPersonalizations = function(order_list) {
 					{
 						"email": order_obj.email
 					}
+				],
+				"bcc": [
+					{
+						"email": 'benson@vecsgardenia.com'
+					}
 				]
 			});
 			return lpersonalization;
@@ -82,35 +87,44 @@ exports.getOopsOrderFailsReminderPersonalizations = function(order_list) {
 
 exports.sendInvoiceMail = function(personalizations_coll) {
 	var defer = q.defer();
-	var request = sendgrid_engine.emptyRequest();
+	if(_.size(personalizations_coll) > 0) {
+		console.log('Send Invoice Mails: ' + _.size(personalizations_coll));
+		var request = sendgrid_engine.emptyRequest();
+		request.method = 'POST';
+		request.path = '/v3/mail/send';
+		request.body = sendgrid_template.invoice_template(personalizations_coll);
 
-	request.method = 'POST';
-	request.path = '/v3/mail/send';
-	request.body = sendgrid_template.invoice_template(personalizations_coll);
-
-	sendgrid_engine.API(request, function (response) {
-		console.log(response.statusCode);
-		console.log(response.body);
-		console.log(response.headers);
-		defer.resolve(response);
-	});
+		sendgrid_engine.API(request, function (response) {
+			console.log(response.statusCode);
+			console.log(response.body);
+			console.log(response.headers);
+			defer.resolve(response);
+		});
+	} else {
+		defer.resolve('No Invoice Mail');
+	}
 	return defer.promise;
 };
 
-exports.sendOopsOrderFailsReminderMail = function(personalizations_coll) {
+exports.sendOopsMail = function(personalizations_coll) {
 	var defer = q.defer();
-	var request = sendgrid_engine.emptyRequest();
+	
+	if(_.size(personalizations_coll) > 0) {
+		console.log('Send Oops Mails: ' + _.size(personalizations_coll));
+		var request = sendgrid_engine.emptyRequest();
+		request.method = 'POST';
+		request.path = '/v3/mail/send';
+		request.body = sendgrid_template.oops_order_fails_reminder_template(personalizations_coll);
 
-	request.method = 'POST';
-	request.path = '/v3/mail/send';
-	request.body = sendgrid_template.oops_order_fails_reminder_template(personalizations_coll);
-
-	sendgrid_engine.API(request, function (response) {
-		console.log(response.statusCode);
-		console.log(response.body);
-		console.log(response.headers);
-		defer.resolve(response);
-	});
+		sendgrid_engine.API(request, function (response) {
+			console.log(response.statusCode);
+			console.log(response.body);
+			console.log(response.headers);
+			defer.resolve(response);
+		});
+	} else {
+		defer.resolve('No Oops Mail');
+	}
 	return defer.promise;
 };
 

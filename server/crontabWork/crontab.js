@@ -14,15 +14,13 @@ var sendgrid = require('../api/sendgrid/sendgrid.controller.js');
 var accounting = require('../api/accounting/accounting.controller.js');
 var Order = require('../api/order/order.controller.js');
 var utf8 = require('utf8');
-
-
 winston.add(winston.transports.File, {filename: 'Benson.log'}); 
 
 // ###################  Accounting for Ezcat and Credit Card  ########################
 // ####  ToDo: This section should be automatized 
 // ####		   by linking ezcat's and credit card company's system
 // ####################################################################################
-var accountingCrontab = schedule.scheduleJob({hour: 9, minute: 0}, function(){
+var accountingCrontab = schedule.scheduleJob({hour: 8, minute: 0}, function(){
 	var lnow = moment();
 	var ltoday = moment().format('YYYY-MM-DD');
 	var lyesterday = lnow.subtract(1, 'days').format('YYYY-MM-DD');
@@ -30,27 +28,27 @@ var accountingCrontab = schedule.scheduleJob({hour: 9, minute: 0}, function(){
 	accounting.checkCreditCard(lyesterday);
 	accounting.checkEzcat(l_7_DaysBefore);
 });
-var now = moment();
-var today = moment().format('YYYY-MM-DD');
-var yesterday = now.subtract(1, 'days').format('YYYY-MM-DD');
-var _7_DaysBefore = now.subtract(6, 'days').format('YYYY-MM-DD');
-accounting.checkCreditCard(yesterday).then(function(data) {}, function(err) {console.log(err)});
-accounting.checkEzcat(_7_DaysBefore).then(function(data) {}, function(err) {console.log(err)});
+// var now = moment();
+// var today = moment().format('YYYY-MM-DD');
+// var yesterday = now.subtract(1, 'days').format('YYYY-MM-DD');
+// var _7_DaysBefore = now.subtract(6, 'days').format('YYYY-MM-DD');
+// accounting.checkCreditCard(yesterday).then(function(data) {}, function(err) {console.log(err)});
+// accounting.checkEzcat(_7_DaysBefore).then(function(data) {}, function(err) {console.log(err)});
 
 
 // ###################  Invoice Adding System and Invoice Mailing System ######################
 // ####
 // ####
 // ############################################################################################
-var j = schedule.scheduleJob({hour: 9, minute: 15}, function(){
+var j = schedule.scheduleJob({hour: 9, minute: 0}, function(){
 	var date = new Date();
 	var initial_date = '2016-06-14';
 	invoice.AutoCreateInvoiceNo(initial_date);
 	winston.info({message: 'Update Invoice!  ' + date});
 });
 
-var initial_date = '2016-06-14';
-invoice.AutoCreateInvoiceNo(initial_date);
+// var initial_date = '2016-06-14';
+// invoice.AutoCreateInvoiceNo(initial_date);
 
 
 // ###################  Rewards Adding System ######################
@@ -74,61 +72,56 @@ var autoAddRewardCrontab = schedule.scheduleJob({hour: 10, minute: 0}, function(
 // ####
 // ####
 // ###########################################################################
-var oops_order_fails_reminder_update_rule = new schedule.RecurrenceRule();
-oops_order_fails_reminder_update_rule.minute = new schedule.Range(0, 59, 2);
-var OopsOrderFailsReminderAUTO = schedule.scheduleJob(oops_order_fails_reminder_update_rule, function() {
-	var now = moment().utcOffset(0).subtract(2, 'minutes').format('YYYY-MM-DD hh:mm');
-	console.log(now + ': Auto Oops Order Fails Reminder Mail');
-	Order.getOopsFailOrders(now).then(function(lorders){
-		sendgrid.getOopsOrderFailsReminderPersonalizations(_.pluck(lorders, 'order_id')).then(function(personalizations_coll) {
+var order_status_fail_id = 10;
+var order_status_pending_id = [48, 49];
+
+var oop_schedule_rule = new schedule.RecurrenceRule();
+oop_schedule_rule.minute = new schedule.Range(0, 59, 1);
+var OopsCron1 = schedule.scheduleJob(oop_schedule_rule, function() {
+	// var now = moment().utcOffset(0).subtract(1, 'minutes').format('YYYY-MM-DD hh:mm');
+	var promises = [];
+	promises.push(Order.getOopsFailOrders(5, 65, order_status_fail_id));
+	promises.push(Order.getOopsFailOrders(90, 65, order_status_pending_id[0]));
+	promises.push(Order.getOopsFailOrders(90, 65, order_status_pending_id[1]));
+	q.all(promises).then(function(datas) {
+		var lorders = datas[0].concat(datas[1]).concat(datas[2]);
+		sendgrid.getOopsPersonalizations(_.pluck(lorders, 'order_id')).then(function(personalizations_coll) {
 			console.log(personalizations_coll);
-			sendgrid.sendOopsOrderFailsReminderMail(personalizations_coll).then(function(resp) {
+			sendgrid.sendOopsMail(personalizations_coll).then(function(resp) {
 				console.log(resp);
 			}, function(err) {
 				console.log(err);
 			});
 		});
-	}, function(err){
+	}, function(err) {
 		console.log(err);
 	});
 });
-
-// sendgrid.getOrdersPersonalizations([33024, 33019, 32998]).then(function(personalizations_coll) {
-// 	console.log(personalizations_coll);
-// 	sendgrid.sendInvoiceMail(personalizations_coll).then(function(resp) {
-// 		console.log(resp);
-// 	}, function(err) {
-// 		console.log(err);
-// 	});
-// }, function(err) {
-// 	console.log(err);
-// });
-
 
 // ###################  DB Customer to MailChimp Integration ######################
 // ####
 // ####
 // ################################################################################
-var customer_update_rule = new schedule.RecurrenceRule();
-customer_update_rule.minute = new schedule.Range(0, 59, 1);
-var syncCustomer2MailChimp = schedule.scheduleJob(customer_update_rule, function() {
-	var now = moment();
-	var today = moment().format('YYYY-MM-DD');
-	customer.getCustomerByDate(today)
-	.then(
-		function(rows) {
-			var ldata = [];
-			ldata = _.reduce(rows, function(ldata, row) {
-				ldata.push({name: row.firstname, email: row.email, telephone: row.telephone});
-				return ldata;
-			}, ldata);
-			mailchimp.addMCListSubscribers(api_config.mailChimp_lists_ids['customer_list'], ldata)
-			.then(function(data) {
-				console.log(moment().format('YYYY-MM-DD hh:mm') + ' Auto customer list sync to mailchimp');
-			});
-		}
-	);
-});
+// var customer_update_rule = new schedule.RecurrenceRule();
+// customer_update_rule.minute = new schedule.Range(0, 59, 1);
+// var syncCustomer2MailChimp = schedule.scheduleJob(customer_update_rule, function() {
+// 	var now = moment();
+// 	var today = moment().format('YYYY-MM-DD');
+// 	customer.getCustomerByDate(today)
+// 	.then(
+// 		function(rows) {
+// 			var ldata = [];
+// 			ldata = _.reduce(rows, function(ldata, row) {
+// 				ldata.push({name: row.firstname, email: row.email, telephone: row.telephone});
+// 				return ldata;
+// 			}, ldata);
+// 			mailchimp.addMCListSubscribers(api_config.mailChimp_lists_ids['customer_list'], ldata)
+// 			.then(function(data) {
+// 				console.log(moment().format('YYYY-MM-DD hh:mm') + ' Auto customer list sync to mailchimp');
+// 			});
+// 		}
+// 	);
+// });
 
 
 // ###################  Google Sheet to MailChimp Integration ######################
