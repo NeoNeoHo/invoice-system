@@ -81,8 +81,8 @@ var OopsCron1 = schedule.scheduleJob(oop_schedule_rule, function() {
 	// var now = moment().utcOffset(0).subtract(1, 'minutes').format('YYYY-MM-DD hh:mm');
 	var promises = [];
 	promises.push(Order.getOopsFailOrders(5, 65, order_status_fail_id));
-	promises.push(Order.getOopsFailOrders(90, 65, order_status_pending_id[0]));
-	promises.push(Order.getOopsFailOrders(90, 65, order_status_pending_id[1]));
+	promises.push(Order.getOopsFailOrders(120, 65, order_status_pending_id[0]));
+	promises.push(Order.getOopsFailOrders(120, 65, order_status_pending_id[1]));
 	q.all(promises).then(function(datas) {
 		var lorders = datas[0].concat(datas[1]).concat(datas[2]);
 		sendgrid.getOopsPersonalizations(_.pluck(lorders, 'order_id')).then(function(personalizations_coll) {
