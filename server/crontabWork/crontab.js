@@ -13,8 +13,11 @@ var mailchimp = require('../api/thing/thing.controller.js');
 var sendgrid = require('../api/sendgrid/sendgrid.controller.js');
 var accounting = require('../api/accounting/accounting.controller.js');
 var Order = require('../api/order/order.controller.js');
-var utf8 = require('utf8');
+var twilio = require('../api/twilio/twilio.controller.js');
 winston.add(winston.transports.File, {filename: 'Benson.log'}); 
+
+
+// twilio.sendSMS([{to:'+886912412381', body:'這是假的測試信，我在星巴克發的'},{to:'+886975751175', body:'這是假的測試信，我在星巴克發的'}]);
 
 // ###################  Accounting for Ezcat and Credit Card  ########################
 // ####  ToDo: This section should be automatized 
@@ -28,12 +31,6 @@ var accountingCrontab = schedule.scheduleJob({hour: 8, minute: 0}, function(){
 	accounting.checkCreditCard(lyesterday);
 	accounting.checkEzcat(l_7_DaysBefore);
 });
-// var now = moment();
-// var today = moment().format('YYYY-MM-DD');
-// var yesterday = now.subtract(1, 'days').format('YYYY-MM-DD');
-// var _7_DaysBefore = now.subtract(6, 'days').format('YYYY-MM-DD');
-// accounting.checkCreditCard(yesterday).then(function(data) {}, function(err) {console.log(err)});
-// accounting.checkEzcat(_7_DaysBefore).then(function(data) {}, function(err) {console.log(err)});
 
 
 // ###################  Invoice Adding System and Invoice Mailing System ######################
@@ -46,9 +43,6 @@ var j = schedule.scheduleJob({hour: 9, minute: 0}, function(){
 	invoice.AutoCreateInvoiceNo(initial_date);
 	winston.info({message: 'Update Invoice!  ' + date});
 });
-
-// var initial_date = '2016-06-14';
-// invoice.AutoCreateInvoiceNo(initial_date);
 
 
 // ###################  Rewards Adding System ######################
@@ -78,11 +72,10 @@ var order_status_pending_id = [48, 49];
 var oop_schedule_rule = new schedule.RecurrenceRule();
 oop_schedule_rule.minute = new schedule.Range(0, 59, 1);
 var OopsCron1 = schedule.scheduleJob(oop_schedule_rule, function() {
-	// var now = moment().utcOffset(0).subtract(1, 'minutes').format('YYYY-MM-DD hh:mm');
 	var promises = [];
-	promises.push(Order.getOopsFailOrders(5, 65, order_status_fail_id));
-	promises.push(Order.getOopsFailOrders(120, 65, order_status_pending_id[0]));
-	promises.push(Order.getOopsFailOrders(120, 65, order_status_pending_id[1]));
+	promises.push(Order.getOopsFailOrders(5, 61, order_status_fail_id));
+	promises.push(Order.getOopsFailOrders(120, 61, order_status_pending_id[0]));
+	promises.push(Order.getOopsFailOrders(120, 61, order_status_pending_id[1]));
 	q.all(promises).then(function(datas) {
 		var lorders = datas[0].concat(datas[1]).concat(datas[2]);
 		sendgrid.getOopsPersonalizations(_.pluck(lorders, 'order_id')).then(function(personalizations_coll) {
