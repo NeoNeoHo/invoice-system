@@ -24,6 +24,34 @@ function getCustomerByDate(date) {
 	return defer.promise;
 }
 
+var getLoyalCustomers = function(purchase_time) {
+	var defer = q.defer();
+	mysql_pool.getConnection(function(err, connection){
+		var sql = 'select count(customer_id) as num, customer_id, telephone, email, firstname from oc_order where order_status_id in (20,21,28,29,32,34) group by customer_id';
+		connection.query(sql, function(err, rows){
+			connection.release();
+			if (err) {
+				defer.reject(err);
+			}
+			var loyal_customers = _.filter(rows, function(row) {return row.num >= purchase_time;});
+			defer.resolve(loyal_customers);
+		});
+	});
+	return defer.promise;
+};
+
+var getLoyalCustomersByGroup = function(purchase_time, num_grps, grp) {
+	var defer = q.defer();
+	getLoyalCustomers(purchase_time).then(function(loyal_customers) {
+		var chosen = _.filter(loyal_customers, function(customer) {
+			return (customer.customer_id % num_grps) == grp;
+		});
+		defer.resolve(chosen);
+	}, function(err) {
+		defer.reject(err);
+	});
+	return defer.promise;
+}
 
 function getFormatDate(date_string) {
 	return date_string.split('T')[0];
@@ -60,3 +88,6 @@ function handleError(res, err) {
 }
 
 exports.getCustomerByDate = getCustomerByDate;
+exports.getLoyalCustomers = getLoyalCustomers;
+exports.getLoyalCustomersByGroup = getLoyalCustomersByGroup;
+

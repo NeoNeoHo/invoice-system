@@ -58,7 +58,6 @@ exports.getOopsPersonalizations = function(order_list) {
 	Order.getOrders(order_list).then(function(order_coll) {
 		personalizations_coll = _.reduce(order_coll, function(lpersonalization, order_obj) {
 			lpersonalization.push({
-				// "subject": String(subject_title),
 				"substitutions": {
 					"-subject-": 'Hi '+ order_obj.firstname+', '+"購物上遇到問題了嗎？",
 					"-preheader-": '嘉丹妮爾客服小組，為您把關購物的每個環節',

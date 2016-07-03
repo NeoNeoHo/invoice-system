@@ -16,8 +16,13 @@ var Order = require('../api/order/order.controller.js');
 var twilio = require('../api/twilio/twilio.controller.js');
 winston.add(winston.transports.File, {filename: 'Benson.log'}); 
 
+// getLoyalCustomersByGroup : (purchase_time, num_grps, grp)
+customer.getLoyalCustomersByGroup(2, 5, 0).then(function(chosen) {
+	console.log(chosen);
+	console.log(_.size(chosen));
+}); 
 
-// twilio.sendSMS([{to:'+886912412381', body:'這是假的測試信，我在星巴克發的'},{to:'+886975751175', body:'這是假的測試信，我在星巴克發的'}]);
+// twilio.sendSMS([{to:'+886975751175', body:'不要再打嗝了，我在星巴克發的'}]);
 
 // ###################  Accounting for Ezcat and Credit Card  ########################
 // ####  ToDo: This section should be automatized 
