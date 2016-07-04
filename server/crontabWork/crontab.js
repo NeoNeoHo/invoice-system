@@ -13,7 +13,7 @@ var mailchimp = require('../api/thing/thing.controller.js');
 var sendgrid = require('../api/sendgrid/sendgrid.controller.js');
 var accounting = require('../api/accounting/accounting.controller.js');
 var Order = require('../api/order/order.controller.js');
-var twilio = require('../api/twilio/twilio.controller.js');
+// var twilio = require('../api/twilio/twilio.controller.js');
 winston.add(winston.transports.File, {filename: 'Benson.log'}); 
 
 // getLoyalCustomersByGroup : (purchase_time, num_grps, grp)
