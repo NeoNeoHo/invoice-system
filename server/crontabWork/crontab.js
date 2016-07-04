@@ -24,6 +24,7 @@ customer.getLoyalCustomersByGroup(2, 5, 0).then(function(chosen_customer) {
 
 // twilio.sendSMS([{to:'+886975751175', body:'不要再打嗝了，我在星巴克發的'}]);
 
+
 // ###################  Accounting for Ezcat and Credit Card  ########################
 // ####  ToDo: This section should be automatized 
 // ####		   by linking ezcat's and credit card company's system
@@ -48,7 +49,6 @@ var j = schedule.scheduleJob({hour: 11, minute: 0}, function(){
 	invoice.AutoCreateInvoiceNo(initial_date);
 	winston.info({message: 'Update Invoice!  ' + date});
 });
-
 
 // ###################  Rewards Adding System ######################
 // ####

@@ -104,79 +104,70 @@ exports.createInvoiceNo = function(req, res) {
 	getNoInvoiceOrders(initial_date)
 	.then(function(orders){
 		if(orders.length == 0) {
-			return res.status(201).json('');
+			return res.status(404).send('');
 		}
-
 		var lorders = orders;
 		var today = new Date();
 		var lyear = today.getFullYear();   // getYear() -> start from 1900
 		var lmonth = today.getMonth() + 1; // getMonth() -> start from 0
 		var lday = today.getDate();
-
-		var p1 = getInvoiceSetting();
-		var p2 = getLastInvoiceNo(lyear, lmonth);
-
-		var promises = [];
-		promises.push(p1);
-		promises.push(p2);
-		q.all(promises)
-		.then(function(datas) {
-			var invoice_settings = datas[0];
-			var last_invoice_no = datas[1][0].invoice_no;
+		getInvoiceSetting().then(function(invoice_settings) {
 			var invoice_setting = _.find(invoice_settings, function(lset) {
 				return (lset.year == lyear) && (lset.month == lmonth);
 			});
+			var last_month_invoice_setting = _.find(invoice_settings, function(lset) {
+				return (lset.year == lyear) && (lset.month == lmonth-1);
+			});
 			var invoice_prefix = invoice_setting.invoice_prefix;
-			if(last_invoice_no == 0) {   // 如果是本月第一筆單
-				if(invoice_setting.start_no == 0) {   // 如果是雙數月的第二個月，發票號碼則為第一個月的延續
-					getLastInvoiceNo(lyear, lmonth-1)
-					.then(function(data) {
-						var start_invoice_no = (Math.floor(data[0].invoice_no / 50) + 1) * 50;
+			var invoice_last_month_prefix = last_month_invoice_setting.invoice_prefix;
+			var invoice_month_start_no = invoice_setting.start_no;
+			getLastInvoiceNo(invoice_prefix).then(function(last_invoice) {
+				if(last_invoice.invoice_no == 0) {   // 如果是本月第一筆單
+					if(invoice_month_start_no == 0) {   // 如果是雙數月的第二個月，發票號碼則為第一個月的延續
+						getLastInvoiceNo(invoice_last_month_prefix)
+						.then(function(last_month_invoice) {
+							var start_invoice_no = (Math.floor(last_month_invoice.invoice_no / 50) + 1) * 50;
+							setInvoices(start_invoice_no, invoice_prefix, lorders)
+							.then(function(result) {
+								sendInvoiceMail(_.pluck(lorders, 'order_id')).then(function(resp) {
+									return res.status(200).json(resp);
+								}, function(err) {
+									return res.status(400).send(err);
+								});
+							});
+						});
+					}
+					else {  //  如果是開始月，則號碼從5500開始
+						var start_invoice_no = invoice_setting.start_no;	
 						setInvoices(start_invoice_no, invoice_prefix, lorders)
 						.then(function(result) {
 							sendInvoiceMail(_.pluck(lorders, 'order_id')).then(function(resp) {
 								return res.status(200).json(resp);
 							}, function(err) {
-								return handleError(res, err);
+								return res.stautus(400).send(err);
 							});
-						}, function(err) {
-							return handleError(res, err);
-						});
-					});
+						});					
+					}
 				}
-				else {  //  如果是開始月，則號碼從5500開始
-					var start_invoice_no = invoice_setting.start_no;	
+				if(last_invoice.invoice_no > 0) {    //  如果不是本月的第一筆單，則發票號碼延續下去
+					var start_invoice_no = last_invoice.invoice_no + 1;
 					setInvoices(start_invoice_no, invoice_prefix, lorders)
 					.then(function(result) {
 						sendInvoiceMail(_.pluck(lorders, 'order_id')).then(function(resp) {
-							return res.status(200).json(resp);
+							return resp;
 						}, function(err) {
-							return handleError(res, err);
+							return res.stautus(400).send(err);
 						});
-					}, function(err) {
-						return handleError(res, err);
 					});
 				}
-			}
-			if(last_invoice_no > 0) {    //  如果不是本月的第一筆單，則發票號碼延續下去
-				var start_invoice_no = last_invoice_no + 1;
-				setInvoices(start_invoice_no, invoice_prefix, lorders)
-				.then(function(result) {
-					sendInvoiceMail(_.pluck(lorders, 'order_id')).then(function(resp) {
-						return res.status(200).json(resp);
-					}, function(err) {
-						return handleError(res, err);
-					});
-				}, function(err) {
-					return handleError(res, err);
-				});
-			}
-			
+			}, function(err) {
+				return res.stautus(400).send(err);
+			});
 		}, function(err) {
-			return handleError(res, err);
+			return res.stautus(400).send(err);
 		});
 	}, function(err){
-		return res.status(404).json('yes');
+		return res.stautus(400).send(err);
 	});
 };
 
@@ -234,25 +225,34 @@ exports.AutoCreateInvoiceNo = function(initial_date) {
 		var lmonth = today.getMonth() + 1; // getMonth() -> start from 0
 		var lday = today.getDate();
 
-		var p1 = getInvoiceSetting();
-		var p2 = getLastInvoiceNo(lyear, lmonth);
-
-		var promises = [];
-		promises.push(p1);
-		promises.push(p2);
-		q.all(promises)
-		.then(function(datas) {
-			var invoice_settings = datas[0];
-			var last_invoice_no = datas[1][0].invoice_no;
+		getInvoiceSetting().then(function(invoice_settings) {
 			var invoice_setting = _.find(invoice_settings, function(lset) {
 				return (lset.year == lyear) && (lset.month == lmonth);
 			});
+			var last_month_invoice_setting = _.find(invoice_settings, function(lset) {
+				return (lset.year == lyear) && (lset.month == lmonth-1);
+			});
 			var invoice_prefix = invoice_setting.invoice_prefix;
-			if(last_invoice_no == 0) {   // 如果是本月第一筆單
-				if(invoice_setting.start_no == 0) {   // 如果是雙數月的第二個月，發票號碼則為第一個月的延續
-					getLastInvoiceNo(lyear, lmonth-1)
-					.then(function(data) {
-						var start_invoice_no = (Math.floor(data[0].invoice_no / 50) + 1) * 50;
+			var invoice_last_month_prefix = last_month_invoice_setting.invoice_prefix;
+			var invoice_month_start_no = invoice_setting.start_no;
+			getLastInvoiceNo(invoice_prefix).then(function(last_invoice) {
+				if(last_invoice.invoice_no == 0) {   // 如果是本月第一筆單
+					if(invoice_month_start_no == 0) {   // 如果是雙數月的第二個月，發票號碼則為第一個月的延續
+						getLastInvoiceNo(invoice_last_month_prefix)
+						.then(function(last_month_invoice) {
+							var start_invoice_no = (Math.floor(last_month_invoice.invoice_no / 50) + 1) * 50;
+							setInvoices(start_invoice_no, invoice_prefix, lorders)
+							.then(function(result) {
+								sendInvoiceMail(_.pluck(lorders, 'order_id')).then(function(resp) {
+									return resp;
+								}, function(err) {
+									return err;
+								});
+							});
+						});
+					}
+					else {  //  如果是開始月，則號碼從5500開始
+						var start_invoice_no = invoice_setting.start_no;	
 						setInvoices(start_invoice_no, invoice_prefix, lorders)
 						.then(function(result) {
 							sendInvoiceMail(_.pluck(lorders, 'order_id')).then(function(resp) {
@@ -260,11 +260,11 @@ exports.AutoCreateInvoiceNo = function(initial_date) {
 							}, function(err) {
 								return err;
 							});
-						});
-					});
+						});					
+					}
 				}
-				else {  //  如果是開始月，則號碼從5500開始
-					var start_invoice_no = invoice_setting.start_no;	
+				if(last_invoice.invoice_no > 0) {    //  如果不是本月的第一筆單，則發票號碼延續下去
+					var start_invoice_no = last_invoice.invoice_no + 1;
 					setInvoices(start_invoice_no, invoice_prefix, lorders)
 					.then(function(result) {
 						sendInvoiceMail(_.pluck(lorders, 'order_id')).then(function(resp) {
@@ -272,21 +272,11 @@ exports.AutoCreateInvoiceNo = function(initial_date) {
 						}, function(err) {
 							return err;
 						});
-					});					
-				}
-			}
-			if(last_invoice_no > 0) {    //  如果不是本月的第一筆單，則發票號碼延續下去
-				var start_invoice_no = last_invoice_no + 1;
-				setInvoices(start_invoice_no, invoice_prefix, lorders)
-				.then(function(result) {
-					sendInvoiceMail(_.pluck(lorders, 'order_id')).then(function(resp) {
-						return resp;
-					}, function(err) {
-						return err;
 					});
-				});
-			}
-			
+				}
+			}, function(err) {
+				return err;
+			});
 		}, function(err) {
 			return err;
 		});
@@ -324,20 +314,20 @@ function getOrderTotalById(order_id) {
 	return defer.promise;
 }
 
-function getLastInvoiceNo(year, month) {
+function getLastInvoiceNo(invoice_prefix) {
 	var defer = q.defer();
-	month = month >= 10 ? month : '0'+month;
-	var start_date = year + '-' + month + '-' + '01';
-	var end_date = year + '-' + month + '-' + '31';
-	console.log(start_date);
-	console.log(end_date);
 	mysql_pool.getConnection(function(err, connection){
-		connection.query('select invoice_no, date_added, order_id from oc_order where date_format(date_added,"%Y-%m-%d") >= ? and date_format(date_added, "%Y-%m-%d") <= ? order by invoice_no desc, date_added asc limit 1;', [start_date, end_date], function(err, row){
+		connection.query('select invoice_no, date_invoice, order_id from oc_order where invoice_prefix = ? order by invoice_no desc limit 1;', [invoice_prefix], function(err, row){
 			if (err) {
 				defer.reject(err);
 			}
 			connection.release();
-			defer.resolve(row);
+			if(!row[0]) {
+				defer.resolve({invoice_no: 0, date_invoice: '', order_id: ''});
+			}
+			else {
+				defer.resolve(row[0]);
+			}
 		});
 	});
 	return defer.promise;
