@@ -18,8 +18,8 @@ winston.add(winston.transports.File, {filename: 'Benson.log'});
 
 // getLoyalCustomersByGroup : (purchase_time, num_grps, grp)
 customer.getLoyalCustomersByGroup(2, 5, 0).then(function(chosen_customer) {
-	console.log(chosen_customer);
-	console.log(_.size(chosen_customer));
+	// console.log(chosen_customer);
+	// console.log(_.size(chosen_customer));
 }); 
 
 // twilio.sendSMS([{to:'+886975751175', body:'不要再打嗝了，我在星巴克發的'}]);
@@ -37,33 +37,24 @@ var accountingCrontab = schedule.scheduleJob({hour: 8, minute: 0}, function(){
 	accounting.checkEzcat(l_7_DaysBefore);
 });
 
-var lnow = moment();
-var ltoday = moment().format('YYYY-MM-DD');
-var lyesterday = lnow.subtract(1, 'days').format('YYYY-MM-DD');
-var l_7_DaysBefore = lnow.subtract(6, 'days').format('YYYY-MM-DD');
-accounting.checkCreditCard(lyesterday);
-accounting.checkEzcat(l_7_DaysBefore);
 
 // ###################  Invoice Adding System and Invoice Mailing System ######################
 // ####
 // ####
 // ############################################################################################
-var j = schedule.scheduleJob({hour: 9, minute: 0}, function(){
+var j = schedule.scheduleJob({hour: 11, minute: 0}, function(){
 	var date = new Date();
 	var initial_date = '2016-06-14';
 	invoice.AutoCreateInvoiceNo(initial_date);
 	winston.info({message: 'Update Invoice!  ' + date});
 });
-var date = new Date();
-var initial_date = '2016-06-14';
-invoice.AutoCreateInvoiceNo(initial_date);
-winston.info({message: 'Update Invoice!  ' + date});
+
 
 // ###################  Rewards Adding System ######################
 // ####
 // ####
 // #################################################################
-var autoAddRewardCrontab = schedule.scheduleJob({hour: 10, minute: 0}, function(){
+var autoAddRewardCrontab = schedule.scheduleJob({hour: 12, minute: 0}, function(){
 	var now = moment();
 	var today = moment().format('YYYY-MM-DD');
 
