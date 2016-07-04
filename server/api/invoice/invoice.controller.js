@@ -106,11 +106,9 @@ exports.createInvoiceNo = function(req, res) {
 		if(orders.length == 0) {
 			return res.status(404).send('');
 		}
-		var lorders = orders;
 		var today = new Date();
 		var lyear = today.getFullYear();   // getYear() -> start from 1900
 		var lmonth = today.getMonth() + 1; // getMonth() -> start from 0
-		var lday = today.getDate();
 		getInvoiceSetting().then(function(invoice_settings) {
 			var invoice_setting = _.find(invoice_settings, function(lset) {
 				return (lset.year == lyear) && (lset.month == lmonth);
@@ -127,9 +125,9 @@ exports.createInvoiceNo = function(req, res) {
 						getLastInvoiceNo(invoice_last_month_prefix)
 						.then(function(last_month_invoice) {
 							var start_invoice_no = (Math.floor(last_month_invoice.invoice_no / 50) + 1) * 50;
-							setInvoices(start_invoice_no, invoice_prefix, lorders)
+							setInvoices(start_invoice_no, invoice_prefix, orders)
 							.then(function(result) {
-								sendInvoiceMail(_.pluck(lorders, 'order_id')).then(function(resp) {
+								sendInvoiceMail(_.pluck(orders, 'order_id')).then(function(resp) {
 									return res.status(200).json(resp);
 								}, function(err) {
 									return res.status(400).send(err);
@@ -139,9 +137,9 @@ exports.createInvoiceNo = function(req, res) {
 					}
 					else {  //  如果是開始月，則號碼從5500開始
 						var start_invoice_no = invoice_setting.start_no;	
-						setInvoices(start_invoice_no, invoice_prefix, lorders)
+						setInvoices(start_invoice_no, invoice_prefix, orders)
 						.then(function(result) {
-							sendInvoiceMail(_.pluck(lorders, 'order_id')).then(function(resp) {
+							sendInvoiceMail(_.pluck(orders, 'order_id')).then(function(resp) {
 								return res.status(200).json(resp);
 							}, function(err) {
 								return res.stautus(400).send(err);
@@ -151,9 +149,9 @@ exports.createInvoiceNo = function(req, res) {
 				}
 				if(last_invoice.invoice_no > 0) {    //  如果不是本月的第一筆單，則發票號碼延續下去
 					var start_invoice_no = last_invoice.invoice_no + 1;
-					setInvoices(start_invoice_no, invoice_prefix, lorders)
+					setInvoices(start_invoice_no, invoice_prefix, orders)
 					.then(function(result) {
-						sendInvoiceMail(_.pluck(lorders, 'order_id')).then(function(resp) {
+						sendInvoiceMail(_.pluck(orders, 'order_id')).then(function(resp) {
 							return resp;
 						}, function(err) {
 							return res.stautus(400).send(err);
@@ -219,11 +217,9 @@ exports.AutoCreateInvoiceNo = function(initial_date) {
 		if(orders.length == 0) {
 			return false;
 		}
-		var lorders = orders;
 		var today = new Date();
 		var lyear = today.getFullYear();   // getYear() -> start from 1900
 		var lmonth = today.getMonth() + 1; // getMonth() -> start from 0
-		var lday = today.getDate();
 
 		getInvoiceSetting().then(function(invoice_settings) {
 			var invoice_setting = _.find(invoice_settings, function(lset) {
@@ -241,9 +237,9 @@ exports.AutoCreateInvoiceNo = function(initial_date) {
 						getLastInvoiceNo(invoice_last_month_prefix)
 						.then(function(last_month_invoice) {
 							var start_invoice_no = (Math.floor(last_month_invoice.invoice_no / 50) + 1) * 50;
-							setInvoices(start_invoice_no, invoice_prefix, lorders)
+							setInvoices(start_invoice_no, invoice_prefix, orders)
 							.then(function(result) {
-								sendInvoiceMail(_.pluck(lorders, 'order_id')).then(function(resp) {
+								sendInvoiceMail(_.pluck(orders, 'order_id')).then(function(resp) {
 									return resp;
 								}, function(err) {
 									return err;
@@ -253,9 +249,9 @@ exports.AutoCreateInvoiceNo = function(initial_date) {
 					}
 					else {  //  如果是開始月，則號碼從5500開始
 						var start_invoice_no = invoice_setting.start_no;	
-						setInvoices(start_invoice_no, invoice_prefix, lorders)
+						setInvoices(start_invoice_no, invoice_prefix, orders)
 						.then(function(result) {
-							sendInvoiceMail(_.pluck(lorders, 'order_id')).then(function(resp) {
+							sendInvoiceMail(_.pluck(orders, 'order_id')).then(function(resp) {
 								return resp;
 							}, function(err) {
 								return err;
@@ -265,9 +261,9 @@ exports.AutoCreateInvoiceNo = function(initial_date) {
 				}
 				if(last_invoice.invoice_no > 0) {    //  如果不是本月的第一筆單，則發票號碼延續下去
 					var start_invoice_no = last_invoice.invoice_no + 1;
-					setInvoices(start_invoice_no, invoice_prefix, lorders)
+					setInvoices(start_invoice_no, invoice_prefix, orders)
 					.then(function(result) {
-						sendInvoiceMail(_.pluck(lorders, 'order_id')).then(function(resp) {
+						sendInvoiceMail(_.pluck(orders, 'order_id')).then(function(resp) {
 							return resp;
 						}, function(err) {
 							return err;
