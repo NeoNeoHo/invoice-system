@@ -56,11 +56,11 @@ function setInvoices(start_invoice_no, invoice_prefix, orders) {
 	var result = {};
 	_.forEach(orders, function(lorder) {
 		var ltoday = new Date();
-		update_coll.push({order_id: lorder.order_id, invoice_no: start_invoice_no, invoice_prefix: invoice_prefix, date_modified: ltoday, date_added: ltoday, order_status_id: lorder.order_status_id, comment: '已開統一發票: '+invoice_prefix+start_invoice_no});
+		update_coll.push({order_id: lorder.order_id, invoice_no: start_invoice_no, invoice_prefix: invoice_prefix, date_invoice: ltoday, date_added: ltoday, order_status_id: lorder.order_status_id, comment: '已開統一發票: '+invoice_prefix+start_invoice_no});
 		start_invoice_no += 1;
 	});
 
-	var sql_string = Order.updateBulkSql('oc_order', _.map(update_coll, _.partialRight(_.pick, ['invoice_no', 'invoice_prefix', 'date_modified'])), _.map(update_coll, _.partialRight(_.pick, ['order_id'])));
+	var sql_string = Order.updateBulkSql('oc_order', _.map(update_coll, _.partialRight(_.pick, ['invoice_no', 'invoice_prefix', 'date_invoice'])), _.map(update_coll, _.partialRight(_.pick, ['order_id'])));
 	sql_string = sql_string + '; ' + Order.insertBulkSql('oc_order_history', _.map(update_coll, _.partialRight(_.pick, ['order_id', 'order_status_id', 'date_added', 'comment'])));
 	if(sql_string.length > 0) {
 		mysql_pool.getConnection(function(err, connection){
